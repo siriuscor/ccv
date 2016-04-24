@@ -1,0 +1,17 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/zepto/1.1.6/zepto.min.js"></script>
+<div id="vols">
+</div>
+
+<script>
+  function getVols(ch, comic, callback) {
+    $.get('/comic?comic=' + comic + '&ch' + ch, function(result) {
+      for(var i = 0; i < result.chapters.length; i++) {
+      // result.chapters.each(function(chapter) {
+        var chapter = result.chapters[i];
+        $('#vols').append(chapter.name);
+      // });
+      }
+    })
+  }
+  getVols('qq', '/Comic/ComicInfo/id/530131');
+</script>

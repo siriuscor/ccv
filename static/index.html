@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width"> 
+<meta name="apple-mobile-web-app-capable" content="yes"> 
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script src='jquery.min.js'></script>
+<title>漫画</title>
+<style>
+</style>
+<body>
+  <div style="width:20%;float:left;position:fixed;"><span><span id="volname"></span><br><a id='select_vol'>选择回数</a>  <span id="pager"></span><!-- <a href='manga.php?a=list'>返回爷的列表</a>  <a id='clear'>清除本回缓存</a> --></span><div id="vols"></div></div>
+  <!-- <span id="prev_link">需要返回上一页请 后退+刷新 Space快捷键滚动页面</span> -->
+  <div id="loading" style="text-align:center"><img src="image/1.gif"></div>
+  <div id="main" style="text-align:center;"></div>
+</body>
+<script>
+var read_pointer = -1;
+var params = parseHash(window.location.hash);
+
+var prev;
+var vol = params['v'];
+var page = params['p'] || 1;
+var volname = params['n'];
+var comic = params['comic'];
+// var ch = params['ch'];
+
+
+$('#volname').html(volname);
+$('#select_vol').attr('href', '/comic?comic=' + comic);
+// $('#clear').attr('href', 'clear.php?v=' + vol);
+
+var end_flag = false;
+var processing = false;
+var buffer = [];
+var buffer_pointer = 0;
+var buffer_size = 5;
+var preload = 2;
+
+var curr_list = [];
+
+var w = $(document).attr('width');
+var h = $(document).attr('height');
+var spacekey = [[w,$('#main').offset().top],[w,h],[0,$('#main').offset().top],[0,h]];
+var pos = 0;
+  $(document).keypress(function(e){
+    if (e.keyCode == 32) {
+      if ($('#img' + read_pointer).width() < document.body.clientWidth) {
+        pos += 3;
+      } else {
+        pos += 1;
+      }
+      if (pos >= 4) {
+        consume();
+        pos = 0;
+      }else{
+    //window.scrollTo(spacekey[pos][0],spacekey[pos][1]);
+        $('html,body').animate({scrollLeft:spacekey[pos][0],scrollTop: spacekey[pos][1]}, 700);
+      }
+      //e.returnValue = false;
+      return false;
+    }
+  });
+
+  function parseHash(hash) {
+    hash = hash.substr(1);
+    var pair = hash.split('&');
+    var ret = {};
+    for(var i=0;i<pair.length;i++){
+        var kv = pair[i].split('=');
+        ret[kv[0]] = decodeURIComponent(kv[1]);
+    }
+    return ret;
+  }
+  
+  function encodeHash(hash) {
+    var temp = [];
+    for(var key in hash) {
+        temp.push(key + "=" + encodeURIComponent(hash[key]));
+    }
+    return '#' + temp.join('&');
+  }
+  
+  function buffer_forward(){
+    buffer_pointer = (buffer_pointer + 1) % buffer_size;
+    //console.log('now buffer poiner', buffer_pointer);
+  }
+  
+  function read_forward(){
+    read_pointer = (read_pointer + 1) % buffer_size;
+    //console.log('now read pointer',read_pointer);
+    //console.log('buffer',buffer);
+  }
+  
+  function produce(count, callback){
+    var next_flag = false;
+    for(var i = 0;i< count;i++){
+      var index = page - 1;
+      if (index < curr_list.length) {
+        var img = curr_list[index];
+        img = '/proxy?url=' + encodeURIComponent(img);
+        $('#img' + buffer_pointer).attr('src', img);
+        // console.log('load image', buffer_pointer, img, index);
+        buffer.push({'v':vol,'p':page,'n':volname, 'comic':comic, 'total': curr_list.length}); 
+        buffer_forward();
+        page ++;
+      } else {
+        next_flag = true;
+        break;
+      }
+    }
+    
+    if (!next_flag){
+        callback && callback();
+        return;
+    }
+    if (end_flag) return;
+    if (processing) return;
+    //read new vol
+      //console.log('start get next vol');
+    processing = true;
+    getNext(vol,comic,function(new_vol,new_volname){
+      if (new_vol == null) {
+        end_flag = true;
+        callback && callback();
+        return;
+      }
+
+      getImageList(new_vol,function(data){
+        vol = new_vol;
+        volname = new_volname;
+        page = 1;
+        curr_list = data;
+        produce(count - i);
+        processing = false;
+        callback && callback();
+      });      
+    });
+  }
+  
+  function back(hash) {
+    //window.location.hash = hash;
+    //    window.location.reload();
+    //history.back();
+    //window.location.reload();
+  }
+  
+  function consume(){
+    //console.log('enter consume');
+    var item = buffer.shift();
+    if (item == null){
+      if (end_flag) {
+        $('#main').html('no new page now');
+          return;
+        } else {
+          alert('点得太快了,歇一歇吧');
+          return;
+        }
+      }
+        
+    if (buffer.length < buffer_size - preload) produce(preload);
+    if (read_pointer != -1) {
+        $('#img' + read_pointer).hide();
+    }
+    
+    if (prev != null) {
+      //$('#prev_link').html('<a href="javascript:back(\'' +encodeHash(prev) +'\')">上一页</a>');
+    }
+    read_forward();
+    pos = 0;
+    //
+    //console.log($(document).attr('width'));
+    
+    $('#img' + read_pointer).show();
+    //console.log('consume',read_pointer,item);
+    window.scrollTo(w,0);
+    // item['comic'] = comic;
+    window.location.hash = encodeHash(item);
+    prev = item;
+    $('#volname').html(item['n']);
+    $('#pager').html(item['p'] + '/' + item['total']);
+    // read(item['v'],item['p'],item['n'],comic);
+  }
+  
+  
+  function init() {
+    var html = '';
+    for(var i=0;i<buffer_size;i++){
+      html +='<img id="img' + i +'">';
+    }
+    
+    $('#main').html(html);
+    $('#main > img').click(consume);
+    $('#main > img').hide();
+    getImageList(vol,function(data) {
+        curr_list = data;
+        produce(buffer_size, consume);
+        $('#loading').hide();
+    });
+  }
+  
+  function getImage(v, p,n, callback) {
+    processing = true;
+    $.get('get_image.php?v='+v+'&p='+p+'&n='+n+'&comic='+comic,function(script){
+      eval(script);
+      //console.log(d);
+      //callback
+      });
+  }
+  
+  function getImageList(v, callback) {
+    $.get('/chapter?v=' + v, function(data) {
+      //console.log('image list',script);
+        // eval(script);
+
+        // console.log(script);
+        callback(data.pics);
+    });
+  }
+  
+  function getNext(v,comic,callback) {
+    $.get('/next?v=' + v + '&comic=' + comic, function(result){
+      console.log('get next vol result',result);
+      callback(result.url, result.name);
+      // if (result == 'end') {
+        // callback(null,null);
+      // } else {
+        // result = result.split(',');
+        // callback(result[0],result[1]);
+      // }
+    });
+  }
+
+  // function getVols(comic, callback) {
+  //   $.get('/comic?comic=' + comic, function(result) {
+  //     for(var i = 0; i < result.chapters.length; i++) {
+  //     // result.chapters.each(function(chapter) {
+  //       var chapter = result.chapters[i];
+  //       $('#vols').append(chapter.name);
+  //     // });
+  //     }
+  //   })
+  // }
+
+
+  
+  function read(v, p, n, name) {
+    // $.get('manga.php?a=reading&ajax=true&v='+v+'&p='+p+'&n='+n+'&name='+name,function(data){
+    // });
+  }
+  init();
+  // getVols('/Comic/ComicInfo/id/530131');
+</script>
+
+</html>
+

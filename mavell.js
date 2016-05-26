@@ -9,7 +9,7 @@ var mkdirp = require('mkdirp');
 var co = require('co');
 
 
-var header = {'Cookie' : 'JSESSIONID=TwyGXGwDTnbTXX1vzzC7W6TWhJm3T1CQVzjfckS3MkSv9JGWGSXH'};
+var header = {'Cookie' : 'JSESSIONID=yWQWXGLcWL1Qzl2Wg422hYfn4Jn2wWJkC4TGhz6H4XhdJPfTSyb5'};
 
 var p = Promise.resolve();
 function chain(func) {

@@ -8,7 +8,7 @@ var exec = require('child_process').exec;
 var mkdirp = require('mkdirp');
 
 
-var header = {'Cookie' : 'JSESSIONID=6Tr0XFCPwC5lh46MpVy1vQNDcSXBrpMCX56L7rTx2DrgccQgdkyp'};
+var header = {'Cookie' : 'JSESSIONID=ygYnXGgfNLgyJvHSlvlLTTvlKz3s2tP9sTlD2ChsDzDJDbh1RLL5'};
 
 var p = Promise.resolve();
 function chain(func) {
@@ -17,11 +17,16 @@ function chain(func) {
     });
 }
 
+var g_links = {};
 
 function crawl(title, url, callback) {
 let tt = title;
 console.log("start crawling ", title, url);
 // var prom = Promise.resolve();
+if (g_links[url] != undefined) return;
+
+g_links[url] = 1;
+e('echo "' + url + '" >> 2.txt');
 
 request.get(url, header, (data) => {
     // console.log(data);
@@ -31,30 +36,30 @@ request.get(url, header, (data) => {
 
     var $ = cheerio.load(data);
     var items = $('.closed a');
-    var path_item = [];
-    var p = $('.base');
-    p.each(function(i, elem) {
-        path_item.push($(this).text().replace(/\//g, '-'));
-    });
-    path_item.push($('.item').text().replace(/\//g, '-'));
+    // var path_item = [];
+    // var p = $('.base');
+    // p.each(function(i, elem) {
+    //     path_item.push($(this).text().replace(/\//g, '-'));
+    // });
+    // path_item.push($('.item').text().replace(/\//g, '-'));
+    //
+    // var path = path_item.join('/');
+    // console.log('path ', path);
+    // if (!fs.existsSync(path)) {
+    //     // e('mkdir -p "' + path + '"');
+    //     chain(function(resolve, reject){
+    //         exec('mkdir -p "' + path + '"', function(err, stdin, stdout) {
+    //             if (err) {
+    //                 console.log(err);
+    //                 reject(err);
+    //             } else {
+    //                 resolve();
+    //             }
+    //         });
+    //     });
+    // }
 
-    var path = path_item.join('/');
-    console.log('path ', path);
-    if (!fs.existsSync(path)) {
-        // e('mkdir -p "' + path + '"');
-        chain(function(resolve, reject){
-            exec('mkdir -p "' + path + '"', function(err, stdin, stdout) {
-                if (err) {
-                    console.log(err);
-                    reject(err);
-                } else {
-                    resolve();
-                }
-            });
-        });
-    }
 
-    e('echo "' + url + '" >> 2.txt');
 /*
     var down = $('.search-result .table-title a');
     // console.log(name, image, author);
@@ -100,6 +105,7 @@ request.get(url, header, (data) => {
         // });
     });
 */
+let subs = [];
     items.each(function(i, elem){
         let link = $(this).attr('href');
         let text = $(this).text();
@@ -112,13 +118,17 @@ request.get(url, header, (data) => {
         console.log('from title', tt);
         console.log("sub titles", text, sub_url);
         // chain(function(resolve, reject) {
-            crawl(tt + "/" + text, sub_url);
+        // crawl(tt + "/" + text, sub_url);
         // });
+        subs.push(sub_url);
 
         // crawl(title, sub_url);
         // chapters.push({'url':sub_url, 'name':text});
     });
 
+    for(let i = 0; i < subs.length; i ++) {
+        crawl(title, subs[i])
+    }
     // chain(function(resolve, reject){
     //     console.log('end crawling ', title, url);
     //     callback();
@@ -164,7 +174,7 @@ var a = 'https://extranet.marvell.com/extranet/dms/documents.do?groupID=4&subGro
 // a = 'https://extranet.marvell.com/extranet/dms/documents.do?groupID=4&subGroupID=52737';
 // a = 'https://extranet.marvell.com/extranet/dms/documents.do?groupID=4&subGroupID=40712';
 // a = 'https://extranet.marvell.com/extranet/dms/documents.do?groupID=4&subGroupID=79577';
-// crawl("root", a, console.log);
+crawl("root", a, console.log);
 
 // crawl("test", a);
 // fs.writeFileSync('root/Power Management/DC-DC Power Regulators/88PG867/88PG839 Reference Schematic and Layout with Components on the Same Layer as IC (.zip).txt',' https://extranet.marvell.com/extranet/dms/download-document.do?id=171882&groupID=4&subGroupID=18717&redirect=false&doDownload=true');
@@ -303,7 +313,7 @@ function downloadFile(param, callback) {
 
 }
 
-
+/*
 var p = Promise.resolve();
 function chain(func) {
     p = p.then(() => {
@@ -323,7 +333,7 @@ chain_list(urls, function(item, resolve){
     console.log('enter', item);
     downloadPage(item, resolve);
 });
-
+*/
 // downloadFile(['My Products/Tools/Marvell GNU Tools/MGCC-4.6-CVE-2015-7547-fixed', 'https://extranet.marvell.com/extranet/dms/download-document.do?id=175990&groupID=4&subGroupID=80954&redirect=false&doDownload=true', 'ttt'], console.log);
 // for (let i = 0; i < urls.length; i++) {
 //     chain(function(resolve, reject){

@@ -6,9 +6,10 @@ var requ = require('request');
 var fs = require('fs');
 var exec = require('child_process').exec;
 var mkdirp = require('mkdirp');
+var co = require('co');
 
 
-var header = {'Cookie' : 'JSESSIONID=ygYnXGgfNLgyJvHSlvlLTTvlKz3s2tP9sTlD2ChsDzDJDbh1RLL5'};
+var header = {'Cookie' : 'JSESSIONID=TwyGXGwDTnbTXX1vzzC7W6TWhJm3T1CQVzjfckS3MkSv9JGWGSXH'};
 
 var p = Promise.resolve();
 function chain(func) {
@@ -26,7 +27,7 @@ console.log("start crawling ", title, url);
 if (g_links[url] != undefined) return;
 
 g_links[url] = 1;
-e('echo "' + url + '" >> 2.txt');
+// e('echo "' + url + '" >> 2.txt');
 
 request.get(url, header, (data) => {
     // console.log(data);
@@ -115,8 +116,9 @@ let subs = [];
         text = text.trim();
         text = text.replace(/\//g, '-');
         // text = text.replace(/'/g, '\\\'');
-        console.log('from title', tt);
-        console.log("sub titles", text, sub_url);
+        // console.log('from title', tt);
+        // console.log('from url', url);
+        // console.log("sub titles", text, sub_url);
         // chain(function(resolve, reject) {
         // crawl(tt + "/" + text, sub_url);
         // });
@@ -126,9 +128,21 @@ let subs = [];
         // chapters.push({'url':sub_url, 'name':text});
     });
 
-    for(let i = 0; i < subs.length; i ++) {
-        crawl(title, subs[i])
+    var crawl_p = function(uuuu) {
+        return new Promise((resolve, reject) => {
+            crawl(title, uuuu, resolve);
+        });
     }
+    co(function* () {
+        for(let i =0;i< subs.length;i++) {
+            // yield wait_p(times[i]);
+            yield crawl_p(subs[i]);
+        }
+    }).then(callback);
+
+    // for(let i = 0; i < subs.length; i ++) {
+    //     crawl(title, subs[i])
+    // }
     // chain(function(resolve, reject){
     //     console.log('end crawling ', title, url);
     //     callback();
@@ -174,6 +188,7 @@ var a = 'https://extranet.marvell.com/extranet/dms/documents.do?groupID=4&subGro
 // a = 'https://extranet.marvell.com/extranet/dms/documents.do?groupID=4&subGroupID=52737';
 // a = 'https://extranet.marvell.com/extranet/dms/documents.do?groupID=4&subGroupID=40712';
 // a = 'https://extranet.marvell.com/extranet/dms/documents.do?groupID=4&subGroupID=79577';
+// a = 'https://extranet.marvell.com/extranet/dms/documents.do?groupID=4&subGroupID=82195';
 crawl("root", a, console.log);
 
 // crawl("test", a);

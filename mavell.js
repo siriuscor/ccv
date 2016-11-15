@@ -311,8 +311,9 @@ function chain(func) {
     });
 }
 
-var urls = fs.readFileSync('3.txt');
-urls = Array.from(new Set(urls.toString().split("\n")));
+// var urls = fs.readFileSync('3.txt');
+// urls = Array.from(new Set(urls.toString().split("\n")));
+var urls = ['https://extranet.marvell.com/extranet/dms/documents.do?groupID=4&subGroupID=21853'];
 // console.log(urls);
 
 // fs.writeFileSync('3.txt', urls.join("\n"));

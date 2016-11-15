@@ -1,12 +1,12 @@
 var request = require('./req');
 var query = require('querystring');
 var cheerio = require('cheerio');
-var base = 'http://ac.qq.com';
-var qq = {};
-qq.can = function(url) {
+var base = 'http://www.dm5.com';
+var dm5 = {};
+dm5.can = function(url) {
     return url.search(base) != -1;
 }
-qq.search = function(name, callback) {
+dm5.search = function(name, callback) {
     var url = base + '/Comic/searchList/search/' +  query.escape(name);
     request.get(url, {}, (data) => {
         var $ = cheerio.load(data);
@@ -21,28 +21,31 @@ qq.search = function(name, callback) {
     });
 }
 
-qq.comic_info = function(url, callback) {
+dm5.comic_info = function(url, callback) {
     // url = base + url;
     request.get(url, {}, (data) => {
         var $ = cheerio.load(data);
-        var items = $('.chapter-page-all .works-chapter-item > a');
-        var name = $('.works-intro-title').text().trim();
-        var image = $('.works-cover img').attr('src');
-        var author = $('.works-intro-digi span:first-child').text();
-        var desp = $('.works-intro-short').text();
+        var items = $('.nr6 a');
+
+        var name = $('h1').text().trim();
+        var image = $('.innr91 img').attr('src');
+        var author = $($('.innr92_m > a')[0]).text();
+        var desp = $('.mhjj > p').text();
         var chapters = [];
         items.each(function(i, elem){
             var link = $(this).attr('href');
+            if (link.startsWith('javascript') || link.startsWith('http')) return;
             var text = $(this).text();
-            text = text.replace('“', '').trim();
-            chapters.push({'url':base + link, 'name':text});
+            text = text.replace('“', '');
+            text = text.replace(name + '漫画', '');
+            chapters.push({'url':base + link, 'name':text.trim()});
         });
 
-        callback({'name': name, 'url':url, 'image': image, 'author': author, 'desp' : desp, 'chapters': chapters});
+        callback({'name': name, 'url':url, 'image': image, 'author': author, 'desp' : desp, 'chapters': chapters.reverse()});
     });
 };
 
-qq.chapter_info = function(url, callback) {
+dm5.chapter_info = function(url, callback) {
     // url = base + url;
     request.get(url, {}, (data) => {
         // var $ = cheerio.load(data);
@@ -63,12 +66,12 @@ qq.chapter_info = function(url, callback) {
     });
 }
 
-module.exports = qq;
+module.exports = dm5;
 
-// qq.search('海贼王', (comic) => {
+// dm5.search('海贼王', (comic) => {
     // console.log(comic);
-    // qq.comic_info(comic.url, console.log);
+    // dm5.comic_info(comic.url, console.log);
 // });
 
-// qq.comic_info('http://ac.qq.com/Comic/ComicInfo/id/530131', console.log);
-// qq.chapter_info('http://ac.qq.com/ComicView/index/id/493819/cid/1', console.log);
+dm5.comic_info('http://www.dm5.com/manhua-qumoshaonian/', console.log);
+// dm5.chapter_info('http://ac.dm5.com/ComicView/index/id/493819/cid/1', console.log);

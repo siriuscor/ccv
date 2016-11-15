@@ -5,6 +5,11 @@ var u = require('url');
 var base = 'http://manhua.dmzj.com';
 // http://manhua.dmzj.com/chaonenglizheqimunanxiongdezainan
 var c = {};
+
+var header = {
+    'Referer' : base,
+    'Host' : 'manhua.dmzj.com',
+}
 //http://www.fzdm.com/manhua/11/
 c.can = function(url) {
     return url.search(base) != -1;
@@ -26,7 +31,7 @@ c.search = function(name, callback) {
 }
 
 c.comic_info = function(url, callback) {
-    request.get(url, (data) => {
+    request.get(url, header, (data) => {
         // var name = data.match(/var g_comic_name = "(.+)";/);
         // name = name[1];
 
@@ -34,7 +39,7 @@ c.comic_info = function(url, callback) {
         var name = $('.anim_title_text').text();
         var image = $('.anim_intro_ptext img').attr('src');
         var author = $('.anim-main_list td').eq(2).text();
-        var desp = $('.line_height_content').text();
+        var desp = $('.line_height_content').text().trim();
         var items = $('.cartoon_online_border a');
         // console.log(name, image, author);
         var chapters = [];
@@ -49,7 +54,8 @@ c.comic_info = function(url, callback) {
 };
 
 c.chapter_info = function(url, callback) {
-    request.get(url, (data) => {
+    request.get(url, header, (data) => {
+        // console.log(data);
         // var $ = cheerio.load(data);
         var match = data.match(/eval\(function(.+)\)/);
         // console.log(match[1]);
@@ -69,6 +75,11 @@ c.chapter_info = function(url, callback) {
     });
 };
 
+c.save_img = function(url, file) {
+    return request.save_img(url, {
+        'referer' : 'http://manhua.dmzj.com/'
+      }, file);
+}
 module.exports = c;
 
 // c.comic_info('http://manhua.dmzj.com/xdnydqs', console.log);

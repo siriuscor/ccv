@@ -24,7 +24,7 @@ c.search = function(name, callback) {
 }
 
 c.comic_info = function(url, callback) {
-    request.get(url, (data) => {
+    request.get(url, {}, (data) => {
         var $ = cheerio.load(data);
         var items = $('.pure-u-1-2 > a');
         var name = $('.ds-thread').attr('data-title');
@@ -58,7 +58,7 @@ c.chapter_info = function(url, callback) {
 
         function get2page(url, i) {
             // url = url + 'index_' + i + '.html';
-            request.get(url + 'index_' + i + '.html', (data) => {
+            request.get(url + 'index_' + i + '.html', {}, (data) => {
                 if (data == null || data == 'Not Found') {
                     // cache[url] = ret;
                     // console.log('callback start');

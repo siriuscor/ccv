@@ -1,7 +1,7 @@
 var request = require('./req');
 var query = require('querystring');
 var cheerio = require('cheerio');
-var base = 'http://www.fzdm.com';
+var base = 'http://manhua.fzdm.com';
 var c = {};
 //http://www.fzdm.com/manhua/11/
 c.can = function(url) {
@@ -27,7 +27,7 @@ c.comic_info = function(url, callback) {
     request.get(url, {}, (data) => {
         var $ = cheerio.load(data);
         var items = $('.pure-u-1-2 > a');
-        var name = $('.ds-thread').attr('data-title');
+        var name = $('#content h2').html();
         var image = $('.pure-g > content > img').attr('src');
         var author = '';
         var desp = '';
@@ -130,5 +130,5 @@ module.exports = c;
     // qq.comic_info(comic.url, console.log);
 // });
 
-// c.comic_info('http://www.fzdm.com/manhua/11/', console.log);
-// c.chapter_info('http://www.fzdm.com/manhua/11/10/', console.log);
+// c.comic_info('http://manhua.fzdm.com/39/', console.log);
+// c.chapter_info('http://manhua.fzdm.com/39/qz42/', console.log);

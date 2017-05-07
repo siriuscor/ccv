@@ -2,7 +2,8 @@ var url = require('url');
 var http = require('http');
 var https = require('https');
 var request = require('request');
-
+var fs = require('fs');
+var zlib = require('zlib');
 
 var cache = {};
 var retry_map = {};
@@ -20,6 +21,7 @@ function get(_url, extra_header, callback) {
     var options = {
         url : _url,
         headers : extra_header,
+        gzip: true
     }
     // var options = url.parse(_url);
     // options.headers = extra_header;
@@ -30,7 +32,11 @@ function get(_url, extra_header, callback) {
     // };
     // console.log(options);
     request(options, (error, response, body) => {
-        callback(body);
+        // if (error) console.log(error);
+        // zlib.gunzip(body, (err, unzipped) => {
+            callback(body);
+        // })
+        
     });
 
     return;
@@ -97,24 +103,31 @@ function retry(_url ,extra_header, callback) {
 function save_img(url, extra_header, file) {
     return new Promise(function(resolve, reject) {
         var body = {
-            'url' : url,
-            'headers' : extra_header
+            url : url,
+            headers : extra_header,
+            timeout : 5000,
         };
         
-        console.log("save img", url, file);
-        var request = require('request');
-        var fs = require('fs');
+        // console.log("save img", url, file);
+
+        var ws = fs.createWriteStream(file);
+        // console.log('create write stream', file);
+        ws.on('finish', () => {
+            ws.close(resolve);
+        });
 
         request
         .get(body)
-        .on('response', function(response) {
-            if (response.headers['content-type'] == 'text/html' || response.statusCode != 200){
-                reject("fatal error");
-            }
-        })
+        // .on('response', function(response) {
+        //     if (response.headers['content-type'] == 'text/html' || response.statusCode != 200){
+        //         reject("fatal error");
+        //     }
+        // })
         .on('error', reject)
-        .on('end', resolve())
-        .pipe(fs.createWriteStream(file))
+        // .on('end', resolve)
+        .pipe(ws)
+        // .on('close', resolve)
+        // .on('error', reject)
     });
 }
 
@@ -152,7 +165,7 @@ function save_img_retry(url, extra_header, file) {
 // get('http://ac.qq.com/Comic/searchList/search/onepiece');
 // get('http://www.baid.cm', {}, console.log);
 // co(function*() {
-//     yield save_img_retry("http://images.dmzj.com/j/%E7%BB%93%E7%95%8C%E5%B8%88/Vol_02/GGS02_000.jpg", {
+//     yield save_img("http://images.dmzj.com/j/%E7%BB%93%E7%95%8C%E5%B8%88/Vol_02/GGS02_000.jpg", {
 //         'referer' : 'http://manhua.dmzj.com/'
 //       }, "1.jpg");
 //       yield save_img("http://images.dmzj.com/j/%E7%BB%93%E7%95%8C%E5%B8%88/Vol_02/GGS02_000.jpg", {

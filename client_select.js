@@ -38,9 +38,9 @@ function enchant(client) {
         });
     };
 
-    // if (!client.save_img) client.save_img = function(url, file) {
-    //     return require('./req').save_img(url, {}, file);
-    // }
+    if (!client.save_img) client.save_img = function(url, file) {
+        return require('./req').save_img(url, {}, file);
+    }
 
     return client;
 }

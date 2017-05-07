@@ -1,43 +1,25 @@
 var fs = require('fs'),os=require('os'),exec = require('child_process').exec,
+execSync = require('child_process').execSync,
     request = require('request'), co = require('co');
 var selector = require('./client_select');
 
 function download(url, start, end) {
     var client = selector.select(url);
     client.comic_info(url, (data) => {
-        console.log("finish loading comic info", data.chapters.length);
-        // console.log(data);
-        // process.exit(0);
+        console.log("finish loading comic info", data);
         data.name = data.name.replace('/', '-');
-        e('mkdir \'' + data.name + '\'');
-        // fs.mkdirSync(data.name);
 
         start = start || 0;
         end = end || data.chapters.length;
         end = Math.min(end, data.chapters.length);
         //multi-thread
         function recur(i) {
-            // console.log('in recur ', i);
             if (i >= end) return;
-            //TODO:check already exists
-            download_chapter(data.chapters[i], data.name + '/', function() {
+            download_chapter(data.chapters[i], '/Users/user/Pictures/' + data.name + '/', function() {
                 recur(i + 1);
             });
         }
-        // var i = 0;
         recur(start);
-        // download_chapter(data.chapters[i], data.name + '/', resolve);
-        // var p = new Promise(function(resolve, reject){
-        //     console.log('begin download');
-        //     resolve();
-        // });
-        // for (var i = 0; i < data.chapters.length; i++) {
-        //     p = p.then(function() {
-        //         return new Promise(function(resolve, reject) {
-        //             download_chapter(data.chapters[i], data.name + '/', resolve);
-        //         });
-        //     });
-        // }
     });
 }
 
@@ -53,87 +35,95 @@ function md5 (text) {
 };
 
 function download_chapter(chapter, path, callback) {
-    var targetPath = __dirname + path;
-
-    var targetZip = targetPath + chapter.name + '.zip';
-    if (fs.existsSync(targetZip)) {
-      console.log('zip fle exist', targetZip);
-      callback();
-      return;
-    }
-
-    chapter.name = chapter.name.replace('/', '-');
-    var client = selector.select(chapter.url);
-
-    console.log('downloading', chapter.name);
-    var tmp_dir = '/tmp/' + md5(chapter.url) + '/';
-
-    var promise = [];
-    exec('mkdir ' + tmp_dir);
-    client.chapter_info(chapter.url, function(chapter_data) {
-        for(var j = 0; j < chapter_data.pics.length; j++) {
-            console.log(chapter_data.pics[j]);
-            promise.push(new Promise(function(resolve, reject) {
-                // client.save_img(chapter_data.pics[j], tmp_dir + j + '.png', resolve, reject);
-            }));
-        }
-        Promise.all(promise).then(function(){
-            console.log("begin compress");
-            exec('cd ' + tmp_dir + ' ;zip \'' + chapter.name + '.zip\' *.png;mv \'' + tmp_dir + chapter.name + '.zip\' ' + targetPath + ';rm -rf '+ tmp_dir,
-                function(err, stdout,stderr) {
-                    console.log(stdout);
-                    callback();
-                });
-        }).catch(function(err) {
-            console.log(err);
-        });
-    });
-}
-
-// save_img("http://images.dmzj.com/j/%E7%BB%93%E7%95%8C%E5%B8%88/Vol_02/GGS02_000.jpg1", "1.jpg", console.log, console.log);
 co(function*() {
-    // save_img_retry("http://images.dmzj.com/j/%E7%BB%93%E7%95%8C%E5%B8%88/Vol_02/GGS02_000.jpg", {
-        // 'referer' : 'http://manhua.dmzj.com/'
-    //   }, "1.jpg").catch(console.log);
-
-
-    var chapter = {'url':'http://manhua.dmzj.com/yybsyuyuhakusho/10503.shtml', 'name':'第19卷'};
-    var path = '/yybs';
-
-    var targetPath = __dirname + path;
-    exec('mkdir -p ' + targetPath);
+    var targetPath = path;
+    if (!fs.existsSync(targetPath)) execSync('mkdir -p "' + targetPath + "\"");
     var targetZip = targetPath + chapter.name + '.zip';
     if (fs.existsSync(targetZip)) {
-      console.log('zip fle exist', targetZip);
+      console.log('skip exist zip fle', targetZip);
       callback();
       return;
     }
 
     chapter.name = chapter.name.replace('/', '-');
     var client = selector.select(chapter.url);
-
-    console.log('downloading', chapter.name);
     var tmp_dir = '/tmp/' + md5(chapter.url) + '/';
 
-    exec('mkdir ' + tmp_dir);
+    if (!fs.existsSync(tmp_dir)) execSync('mkdir \'' + tmp_dir+"'");
+    console.log('mk temp', tmp_dir, chapter.url);
     var chapter_data = yield client.chapter_info_p(chapter.url);
-    console.log(chapter_data);
     var r = require('./req');
-    for(var j = 0; j < chapter_data.pics.length; j++) {
-        console.log(chapter_data.pics[j]);
-        yield client.save_img(chapter_data.pics[j], tmp_dir + j + '.png');
+    var total = chapter_data.pics.length;
+    var ProgressBar = require('progress');
+
+    var bar = new ProgressBar('downloading ' + chapter.name +' :percent [:bar]', { 
+        complete: '=',
+        incomplete: ' ',
+        width : 50,
+        total: total });
+
+    var worker = 1;
+
+    function t(arr, start) {
+        if (arr.length == 0) return Promise.resolve();
+        return new Promise((resolve, reject) => {
+            co(function*() {
+                for(var i = 0;i < arr.length; i++) {
+                    // console.log("save ", (start+i));
+                    yield client.save_img(arr[i], tmp_dir + (start+i) + '.png')
+                    bar.tick();
+                }
+                resolve();
+            }).catch(reject);
+        })
+    }
+
+    // var per_count = parseInt((total + worker - 1) / worker);
+    // console.log("compute", total, per_count);
+    // var arr = [];
+    // for(var i = 0; i < worker; i++) {
+    //     // console.log("count2", i*worker, per_count);
+    //     arr.push(t(chapter_data.pics.slice(i*per_count, i*per_count+per_count), i*per_count));
+    // }
+    // yield arr;
+    for(var j = 0; j < total; j = j+worker) {
+        var arr = [];
+        for(var p = 0; p < worker; p++) {
+            if (j+p < total) {
+                // console.log("process", (j+p));
+                arr.push(client.save_img(chapter_data.pics[j+p], tmp_dir + (j+p) + '.png'))
+            }
+        }
+        // console.log('length', arr.length);
+        // yield client.save_img(chapter_data.pics[j], tmp_dir + j + '.png');
+        // console.log(chapter.name, (j+1) + '/' + total);
+        yield arr;
+        bar.tick(worker);
     }
 
     console.log("begin compress");
-    exec('cd ' + tmp_dir + ' ;zip \'' + chapter.name + '.zip\' *.png;mv \'' + tmp_dir + chapter.name + '.zip\' ' + targetPath + ';rm -rf '+ tmp_dir,
+    // var cmd = 'cd ' + tmp_dir + ' ;zip \'' + chapter.name + '.zip\' *.png;mv \'' + tmp_dir + chapter.name + '.zip\' ' + targetZip + ';rm -rf '+ tmp_dir;
+    // console.log("cmd", cmd);
+    exec('cd ' + tmp_dir + ' ;zip \'' + chapter.name + '.zip\' *.png;mv \'' + tmp_dir + chapter.name + '.zip\' \'' + targetZip + '\';rm -rf '+ tmp_dir,
         function(err, stdout,stderr) {
-            console.log(stdout);
-            // callback();
+            console.log(stdout, stderr);
+            callback();
         });
-
 }).catch(console.error);
-// download('http://manhua.dmzj.com/jjs', 5, 35);
-// download_chapter({'url':'http://manhua.dmzj.com/yybsyuyuhakusho/10503.shtml', 'name':'第19卷'},'幽游白书', function() {
+}
+
+
+process.on('uncaughtException', (err) => {
+  console.log('uncaught', err);
+  console.log('stack', err.stack);
+  process.exit(1);
+});
+// var client = selector.select('http://manhua.dmzj.com');
+// client.save_img("http://images.dmzj.com/j/%E7%BB%93%E7%95%8C%E5%B8%88/28/GGS28_094.jpg", "1.jpg")
+// save_img("http://images.dmzj.com/j/%E7%BB%93%E7%95%8C%E5%B8%88/Vol_02/GGS02_000.jpg1", "1.jpg", console.log, console.log);
+
+download('http://manhua.fzdm.com/28/');//, 5, 35);
+// download_chapter({'url':'http://manhua.dmzj.com/yybsyuyuhakusho/10503.shtml', 'name':'第19卷'}, '/Users/user/Pictures/幽游白书/', function() {
 //     console.log('finish');
 // });
 

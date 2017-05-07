@@ -1,3 +1,15 @@
+var ProgressBar = require('progress');
+var bar = new ProgressBar(':bar', { total: 10 });
+var timer = setInterval(function () {
+  bar.tick();
+  if (bar.complete) {
+    console.log('\ncomplete\n');
+    clearInterval(timer);
+  }
+}, 100);
+
+return;
+
 // function a(p,a,c,k,e,d){
 //     e=function(c){return(c<a?'':e(parseInt(c/a)))+((c=c%a)>35?String.fromCharCode(c+29):c.toString(36))};
 //     if(!''.replace(/^/,String)){

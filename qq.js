@@ -71,4 +71,4 @@ module.exports = qq;
 // });
 
 // qq.comic_info('http://ac.qq.com/Comic/ComicInfo/id/530131', console.log);
-// qq.chapter_info('http://ac.qq.com/ComicView/index/id/493819/cid/1', console.log);
+// qq.chapter_info('http://ac.qq.com/ComicView/index/id/505431/cid/2', console.log);

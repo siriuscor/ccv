@@ -73,5 +73,5 @@ module.exports = dm5;
     // dm5.comic_info(comic.url, console.log);
 // });
 
-dm5.comic_info('http://www.dm5.com/manhua-qumoshaonian/', console.log);
-// dm5.chapter_info('http://ac.dm5.com/ComicView/index/id/493819/cid/1', console.log);
+// dm5.comic_info('http://www.dm5.com/manhua-shihuangzhe/', console.log);
+dm5.chapter_info('http://ac.dm5.com/ComicView/index/id/493819/cid/1', console.log);

@@ -9,6 +9,8 @@ var c = {};
 var header = {
     'Referer' : base,
     'Host' : 'manhua.dmzj.com',
+    // 'Accept-Encoding:' : '*',
+    "Accept" : "text/html"
 }
 //http://www.fzdm.com/manhua/11/
 c.can = function(url) {
@@ -32,6 +34,7 @@ c.search = function(name, callback) {
 
 c.comic_info = function(url, callback) {
     request.get(url, header, (data) => {
+        // console.log(data);
         // var name = data.match(/var g_comic_name = "(.+)";/);
         // name = name[1];
 

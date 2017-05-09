@@ -108,7 +108,7 @@ function save_img(url, extra_header, file) {
             timeout : 5000,
         };
         
-        console.log("process", url, file);
+        // console.log("process", url, file);
         var ws = fs.createWriteStream(file);
         // console.log('create write stream', file);
         ws.on('finish', () => {

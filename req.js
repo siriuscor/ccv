@@ -108,13 +108,14 @@ function save_img(url, extra_header, file) {
             timeout : 5000,
         };
         
-        // console.log("save img", url, file);
-
+        console.log("process", url, file);
         var ws = fs.createWriteStream(file);
         // console.log('create write stream', file);
         ws.on('finish', () => {
             ws.close(resolve);
         });
+
+        ws.on('error', reject);
 
         request
         .get(body)
@@ -142,24 +143,23 @@ function retry(maxRetries, fn) {
 
 var co = require('co');
 function save_img_retry(url, extra_header, file) {
-    return new Promise((resolve, reject) => {
-    co(function*() {
+    // return new Promise((resolve, reject) => {
+    return co(function*() {
         for(var i = 0;i < 3; i ++) {
             try{
                 yield save_img(url, extra_header, file);
-                resolve();
-                // return;
+                // resolve();
+                return;
             }catch(e) {
                 console.log("retry",i, url);
             }
         }
-        reject("retry max");
-    }).catch((err) => {
-        console.log('catch outside');
-        reject(err);
+        // reject("retry max");
+        throw "retry max"
     })
        
-    });
+    // });
+    
 }
 // get('http://images.dmzj.com/y/%E9%93%B6%E6%B2%B3%E9%AA%91%E5%A3%AB%E4%BC%A0/%E7%AC%AC02%E5%8D%B7/Yhqsz02-004.jpg', console.log);
 // get('http://ac.qq.com/Comic/searchList/search/onepiece');

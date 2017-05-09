@@ -28,6 +28,8 @@ c.comic_info = function(url, callback) {
         var $ = cheerio.load(data);
         var items = $('.pure-u-1-2 > a');
         var name = $('#content h2').html();
+        name = name.replace(/&#x([\d\w]{4});/gi, function (match, grp) {
+                return String.fromCharCode(parseInt(grp, 16)); } );
         var image = $('.pure-g > content > img').attr('src');
         var author = '';
         var desp = '';

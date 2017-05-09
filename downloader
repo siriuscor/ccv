@@ -1,7 +1,20 @@
+#!/usr/bin/env node
+
 var fs = require('fs'),os=require('os'),exec = require('child_process').exec,
 execSync = require('child_process').execSync,
     request = require('request'), co = require('co');
 var selector = require('./client_select');
+
+var argv = require('yargs')
+    .usage('$0 [-c] url')
+    .demandCommand(1)
+    .boolean('c')
+    .help()
+    .argv
+
+var config = {
+    folder : '/Users/liyi/Pictures/',
+}
 
 function download(url, start, end) {
     var client = selector.select(url);
@@ -15,7 +28,7 @@ function download(url, start, end) {
         //multi-thread
         function recur(i) {
             if (i >= end) return;
-            download_chapter(data.chapters[i], '/Users/user/Pictures/' + data.name + '/', function() {
+            download_chapter(data.chapters[i], config.folder + data.name + '/', function() {
                 recur(i + 1);
             });
         }
@@ -29,6 +42,8 @@ function e(cmd) {
         if (err) console.log(err);
     });
 }
+
+
 var crypto = require('crypto');
 function md5 (text) {
   return crypto.createHash('md5').update(text).digest('hex');
@@ -90,14 +105,16 @@ co(function*() {
         var arr = [];
         for(var p = 0; p < worker; p++) {
             if (j+p < total) {
-                // console.log("process", (j+p));
+                console.log("process", (j+p));
                 arr.push(client.save_img(chapter_data.pics[j+p], tmp_dir + (j+p) + '.png'))
             }
         }
+        console.log("after push");
         // console.log('length', arr.length);
         // yield client.save_img(chapter_data.pics[j], tmp_dir + j + '.png');
         // console.log(chapter.name, (j+1) + '/' + total);
         yield arr;
+        console.log("after yield");
         bar.tick(worker);
     }
 
@@ -122,8 +139,18 @@ process.on('uncaughtException', (err) => {
 // client.save_img("http://images.dmzj.com/j/%E7%BB%93%E7%95%8C%E5%B8%88/28/GGS28_094.jpg", "1.jpg")
 // save_img("http://images.dmzj.com/j/%E7%BB%93%E7%95%8C%E5%B8%88/Vol_02/GGS02_000.jpg1", "1.jpg", console.log, console.log);
 
-download('http://manhua.fzdm.com/28/');//, 5, 35);
+// download('http://manhua.fzdm.com/28/');//, 5, 35);
 // download_chapter({'url':'http://manhua.dmzj.com/yybsyuyuhakusho/10503.shtml', 'name':'第19卷'}, '/Users/user/Pictures/幽游白书/', function() {
 //     console.log('finish');
 // });
 
+
+var url = argv._[0];
+if (argv.c) {
+    download_chapter({'url' : url, 'name' : "test_chapter"}, config.folder + 'test_chapter', function() {
+        console.log('finish');
+    })
+} else {
+    download(url);
+}
+// console.log(argv);

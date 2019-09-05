@@ -1,169 +1,113 @@
 const puppeteer = require('puppeteer');
 const {URL} = require('url');
 const path = require('path');
-const mime = require('mime');
 const fs = require('fs-extra');
 const os = require('os');
-// const {} = require('./plugins');
 const plugins = require('./plugins');
+const cp = require('child_process');
 // chapter list https://manhua.fzdm.com/3/
 // detail https://manhua.fzdm.com/3/Vol_001/
 
 var comicUrl = 'https://manhua.fzdm.com/3/Vol_001/';
+comicUrl = 'https://manhua.fzdm.com/3/';
+comicUrl = 'https://manhua.fzdm.com/41/';
+comicUrl = 'https://www.manhuafen11.com/comic/2314/';
+comicUrl = 'https://tw.manhuagui.com/comic/20200/';
+var chapterUrl = 'https://tw.manhuagui.com/comic/20200/277805.html';
+
+var zipPath = process.cwd();
+var info = console.log;
+var debug = console.log;
 
 class Comtaku {
     constructor() {
         this.imageCache = {};
     }
-    async openBrowser() {
-        this.browser = await puppeteer.launch();
-        this.page = await this.browser.newPage();
-        this.page.on('response', async (response) => {
-            const url = new URL(response.url());
-            let type = mime.getExtension(response.headers()['content-type']);
-            // console.log(url, type, response.headers()['content-type']);
-            if (['jpeg', 'png', 'gif'].includes(type)) { // cache image response
-                this.imageCache[url.href] = response;
-            }
-            
-            // let filePath = path.resolve(`./output${url.pathname}`);
-            // if (path.extname(url.pathname).trim() === '') {
-            // filePath = `${filePath}/index.html`;
-            // }
-            // await fse.outputFile(filePath, await response.buffer());
-        });
+    async openBrowser(opts) {
+        this.browser = await puppeteer.launch(Object.assign({ignoreHTTPSErrors: true}, opts));
     }
 
-    async browseComic(url) {
-        this.loadPlugin(url);
+    async browseComic(url, opts={}) {
+        let plugin = this.loadPlugin(url, opts);
+        let page = await this.browser.newPage();
+        await plugin.init(page);
+        await plugin.goto(page, url);
+        let chapters = await plugin.findChapters(page);
+        info(`FOUND ${chapters.length} Chapters`);
+        let workerNumber = opts.worker || 2;
+        let worker = new Array(workerNumber).fill(0);
+        let index = 0;
+        await Promise.all(worker.map(async item => {
+            while(chapters[index]) await this.browseChapter(chapters[index++], opts);
+        }));
     }
 
-    async browseChapter(url) {
-        this.loadPlugin(url);
+    async browseChapter(url, opts={}) {
+        let title = null;
+        if (typeof url == 'object') {
+            let chapterInfo = url;
+            url = chapterInfo.url;
+            title = chapterInfo.name;
+        }
+        if (await this.isDownloaded(title)) {
+            info(`${title} exists, skip download`);
+            return;
+        }
+        info(`BEGIN Browse ${title} at ${url}`);
+        let browser = await puppeteer.launch(Object.assign({ignoreHTTPSErrors: true}, opts));
+        let plugin = this.loadPlugin(url, opts);
+        let page = await browser.newPage();
+        await plugin.init(page);
         let dir = await fs.mkdtemp(os.tmpdir());
         let index = 1;
-        await this.page.goto(url);
-        let image = await this.plugin.findImage();
-        let savePath = path.resolve(dir, index + '');
-        await this.saveCacheImage(image, savePath);
-        let next = await this.plugin.findNext();
-        while(next) {
-            await Promise.all([
-                this.page.waitForNavigation(),
-                next.click(),
-            ]);
+        await plugin.goto(page, url);
+        if (!title) title = await plugin.findTitle(page);
+        let zipName = `${title}.zip`;
+        let zipFullPath = path.resolve(zipPath, zipName);
+        // check already download
+        if (await fs.exists(zipFullPath)) {
+            info(`${title} exists, skip download`);
+            await page.close();
+            return;
+        }
+        await plugin.findImageAndSave(page, path.resolve(dir, `${index}`));
+        while(await plugin.gotoNext(page)) {
             index ++;
-            await this.saveCacheImage(await this.plugin.findImage(), path.resolve(dir, index + ''));
-            next = await this.plugin.findNext();
+            await plugin.findImageAndSave(page, path.resolve(dir, `${index}`));
+            info(`save for ${title}/${index}`);
         }
+        await page.close();
+        await browser.close();
+        cp.execSync(`cd ${dir};zip '${title}.zip' *;mv '${title}.zip' ${zipPath}/;rm -rf ${dir}`);
     }
 
-    loadPlugin(url) {
-        if (!this.plugin) {
-            let plugin = plugins.detect(url);
-            this.plugin = new plugin(this.page);
-        }
+    async closeBrowser() {
+        return await this.browser.close();
     }
 
-    async saveCacheImage(url, savePath) {
-        if (!this.imageCache[url]) return;
-        let type = mime.getExtension(this.imageCache[url].headers()['content-type']);
-        savePath = savePath + '.' + type;
-        console.log('save image', savePath);
-        fs.writeFileSync(savePath, await this.imageCache[url].buffer());
+    async isDownloaded(title) {
+        let zipName = `${title}.zip`;
+        let zipFullPath = path.resolve(zipPath, zipName);
+        return await fs.exists(zipFullPath);
+    }
+
+    loadPlugin(url, opts) {
+        let plugin = plugins.detect(url);
+        if (!plugin) throw new Error(`plugin not found for url ${url}`);
+        return new plugin(opts);
     }
 }
 
 (async () => {
     try {
+        let DEBUG = true;
+        let opts = DEBUG ? {worker: 1, headless: false, slowMo: 2000} : {worker: 2};
         let otaku = new Comtaku();
-        await otaku.openBrowser();
-        await otaku.browseChapter(comicUrl);
+        await otaku.openBrowser(opts);
+        // await otaku.browseComic(comicUrl, opts);
+        await otaku.browseChapter(chapterUrl, opts);
+        await otaku.closeBrowser();
     }catch(e) {
         console.error(e);
     }
 })();
-
-/*
-(async () => {
-    try {
-    const browser = await puppeteer.launch({headless: false});
-    const page = await browser.newPage();
-    const devices = require('puppeteer/DeviceDescriptors');
-    // console.log(JSON.stringify(Object.keys(devices)));
-    await page.emulate(devices['iPad']);
-    //   await page.setRequestInterception(true);
-    //   page.on('request', interceptedRequest => {
-    // console.log("request:", interceptedRequest.url());
-    // interceptedRequest.continue();
-    //   });
-    await page.goto(comicUrl);
-    //   console.log(await page.$('img'));
-    // page.on('console', msg => {
-    //     console.log('console output->', msg.text());
-    // });
-    let image = await findImage(page);
-    console.log('find image:', image);
-    let nextpage = await findNext(page);
-    while(nextpage) {
-        await Promise.all([
-            page.waitForNavigation(),
-            nextpage.click(),
-        ]);
-        let image = await findImage(page);
-        console.log('find image', image);
-        nextpage = await findNext(page);
-    }
-
-    // console.log('next page:', nextpage);
-
-    // const [response] = await Promise.all([
-    //     page.waitForNavigation(), // The promise resolves after navigation has finished
-    //     nextpage.click(), // 点击该链接将间接导致导航(跳转)
-    //   ]);
-
-    //   console.log('next page', response);
-    await browser.close();
-    } catch(e) {
-        console.error(e);
-    }
-})();
-*/
-async function findImage(page) {
-    const capture = await page.evaluateHandle(() => {
-        var all = $('img');
-        var biggest;
-        var max = 0;
-        for (var i = 0; i < all.length; i++) {
-            var item = $(all[i]);
-            
-            var area = item.width() * item.height();
-            if (area > max) {
-                biggest = item;
-                max = area;
-            }
-        }
-        console.log('get element', biggest.width(), biggest.height(),biggest.attr('src'));
-        return biggest.get(0);
-    });
-
-    // var src = capture[1];
-    var property = await capture.getProperty('src');
-    return await property.jsonValue();
-}
-
-async function findNext(page) {
-    const nextpage = await page.evaluateHandle(() => {
-        var all = $('a');
-        for (var i = 0; i < all.length; i++) {
-            var item = $(all[i]);
-            // console.log(item.text());
-            if (item.text() == '下一页') {
-                return all[i];
-            }
-        }
-        return null;
-    });
-
-    return nextpage;
-}

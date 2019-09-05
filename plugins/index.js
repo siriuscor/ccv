@@ -1,19 +1,20 @@
-let {URL} = require('url');
+// let {URL} = require('url');
 let {DefaultPlugin} = require('./default.js');
 let {FZDMPlugin} = require('./fzdm.js');
+let {MHFPlugin} = require('./manhuafen.js');
+let {DM5Plugin} = require('./dm5');
+let {MHGPlugin} = require('./manhuagui');
 
-let pluginMap = {
-    'manhua.fzdm.com': FZDMPlugin
-}
+let plugins = [FZDMPlugin, MHFPlugin, DM5Plugin, MHGPlugin];
 
-function detect(_url) {
-    let u = new URL(_url);
-    if (pluginMap[u.host]) {
-        console.log(`PLUGIN: HOST ${u.host} DETECT`);
-        return pluginMap[u.host];
+function detect(url) {
+    let p = plugins.filter((p) => p.canHandle(url));
+    if (p.length > 0) {
+        console.log(`PLUGIN: ${p[0].name} DETECTED`);
+        return p[0];
     } else {
-        console.log(`PLUGIN: unknown HOST ${u.host}`);
-        return DefaultPlugin;
+        console.log(`PLUGIN: no PLUGIN can handle ${url}`);
+        return null;
     }
 }
 

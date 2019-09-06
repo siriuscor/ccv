@@ -1,4 +1,3 @@
-let {URL} = require('url');
 let {DefaultPlugin} = require('./default.js');
 class MHGPlugin extends DefaultPlugin{
     constructor(options) {
@@ -8,23 +7,12 @@ class MHGPlugin extends DefaultPlugin{
     }
 
     static canHandle(url) {
-        let u = new URL(url);
-        if (u.host == 'tw.manhuagui.com') return true;
-        return false;
+        return (url.host == 'tw.manhuagui.com');
     }
 
-    async goto(page, url) {
-        this.imageCache = {};
-        for (let i = 0; i < this.options.retry; i++) {
-            try {
-                await page.goto(url);
-                await page.waitForSelector('#imgLoading', {hidden: true});
-                return true;
-            } catch (e) {
-                debug(`request error ${e.toString()}, retry ${i}`);
-            }
-        }
-        throw new Error(`page ${url} load error, reach max retry`);
+    async open(page, url) {
+        await page.goto(url);
+        await page.waitForSelector('#imgLoading', {hidden: true});
     }
 
     async findChapters(page) {
@@ -36,35 +24,16 @@ class MHGPlugin extends DefaultPlugin{
 
     async gotoNext(page) {
         let next = await this.findNext(page);
-        if (!next || !next.click) return null;
-        for (let i = 0; i < this.options.retry; i++) {
-            try {
-                await next.click({delay: 100});
-                await page.waitForSelector('#mangaBox', {visible: true});
-                return true;
-            } catch (e) {
-                debug(`navigation error ${e.toString()}, retry ${i}`);
-            }
-        }
-        throw new Error(`page load error, reach max retry`);
+        await next.click({delay: 100});
+        await page.waitForSelector('#mangaBox', {visible: true});
     }
-    async findNext(page) {
+
+    async hasNext(page) {
         let lastPage = await page.evaluate(() => {
             return $('#pageSelect option:last').attr('selected') == 'selected';
         });
-        if (lastPage) return null;
-        const nextpage = await page.evaluateHandle(() => {
-            var all = $('a');
-            for (var i = 0; i < all.length; i++) {
-                var item = $(all[i]);
-                var text = item.text();
-                if (text == '下一页' || text == '下一頁') {
-                    return all[i];
-                }
-            }
-            return null;
-        });
-        return nextpage;
+        if (lastPage) return false;
+        else return true;
     }
 }
 

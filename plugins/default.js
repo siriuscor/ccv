@@ -15,11 +15,16 @@ class DefaultPlugin {
             requestTimeout: 30000,
             filterResources: null
         }, options);
-        this.image
+        this.imageCache = {};
     }
 
     static canHandle(url) {
         return false;
+    }
+
+    /* search for comic name in site */
+    static async search(name) {
+        return [{name:'123123', url:'adfsdfsadf', from:'abc'}, {name:'123123', url:'adfsdfsadf', from:'abc'}];
     }
 
     async init(page) {
@@ -46,40 +51,35 @@ class DefaultPlugin {
         // page.on('console', msg => {
             // console.log(`from console: ${msg.text()}`);
         // });
-
     }
 
-    async goto(page, url) {
-        this.imageCache = {};
+    async retry(proc, ...args) {
         for (let i = 0; i < this.options.retry; i++) {
             try {
-                return await page.goto(url);
+                return await proc.apply(this, args);
             } catch (e) {
-                debug(`request error ${e.toString()}, retry ${i}`);
+                debug(`process error ${e.toString()}, retry ${i}`);
             }
         }
-        throw new Error(`page ${url} load error, reach max retry`);
+        return await Promise.reject('process error reach max retry');
+    }
+
+    async open(page, url) {
+        return await page.goto(url);
+    }
+
+    async hasNext(page) {
+        let next = await this.findNext(page);
+        if (!next || !next.click) return false;
+        else return next;
     }
 
     async gotoNext(page) {
         let next = await this.findNext(page);
-        if (!next || !next.click) return null;
-        return await this.clickLink(page, next);
-    }
-
-    async clickLink(page, element) {
-        this.imageCache = {};
-        for (let i = 0; i < this.options.retry; i++) {
-            try {
-                return await Promise.all([
-                    page.waitForNavigation(),
-                    element.click({delay: 100}),
-                ]);
-            } catch (e) {
-                debug(`navigation error ${e.toString()}, retry ${i}`);
-            }
-        }
-        throw new Error(`page load error, reach max retry`);
+        return await Promise.all([
+            page.waitForNavigation(),
+            next.click({delay: 100}),
+        ]);
     }
 
     async findChapters(page) {
@@ -124,7 +124,17 @@ class DefaultPlugin {
     }
 
     async findNext(page) {
-        return null;
+        return await page.evaluateHandle(() => {
+            var all = $('a');
+            for (var i = 0; i < all.length; i++) {
+                var item = $(all[i]);
+                var text = item.text();
+                if (text == '下一页' || text == '下一頁') {
+                    return all[i];
+                }
+            }
+            return null;
+        });
     }
 }
 

@@ -1,23 +1,11 @@
-let {URL} = require('url');
 let {DefaultPlugin} = require('./default.js');
 class MHFPlugin extends DefaultPlugin{
     constructor(options) {
-        super(Object.assign({
-            emulator: null
-            // filterResources: (url) => {
-            //     if (url.match(/baidu\.com/)) {
-            //         return true;
-            //     } else {
-            //         return false;
-            //     }
-            // }
-        }, options));
+        super(Object.assign({}, options));
     }
 
     static canHandle(url) {
-        let u = new URL(url);
-        if (u.host == 'www.manhuafen.com') return true;
-        return false;
+        return (url.host == 'www.manhuafen.com');
     }
 
     async findChapters(page) {
@@ -27,12 +15,16 @@ class MHFPlugin extends DefaultPlugin{
         return hrefs.reverse();
     }
 
-    async findNext(page) {
+    async hasNext(page) {
         let lastPage = await page.evaluate(() => {
             return $('#page_select option:last').attr('selected') == 'selected';
         });
-        if (lastPage) return null;
-        else return await page.$('.img_land_next');
+        if (lastPage) return false;
+        else return true;
+    }
+
+    async findNext(page) {
+        return await page.$('.img_land_next');
     }
 }
 

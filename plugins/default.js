@@ -1,7 +1,7 @@
 const {
     URL
 } = require('url');
-const Devices = require('puppeteer/DeviceDescriptors');
+// const Devices = require('puppeteer/DeviceDescriptors');
 const path = require('path');
 const fs = require('fs-extra');
 const mime = require('mime');
@@ -28,7 +28,7 @@ class DefaultPlugin {
     }
 
     async init(page) {
-        if (this.options.emulator) await page.emulate(Devices[this.options.emulator]);
+        // if (this.options.emulator) await page.emulate(Devices[this.options.emulator]);
         page.on('response', async (response) => {
             const url = new URL(response.url());
             let type = mime.getExtension(response.headers()['content-type']);

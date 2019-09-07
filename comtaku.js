@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
 const {URL} = require('url');
 const path = require('path');
 const fs = require('fs-extra');
@@ -7,11 +7,13 @@ const os = require('os');
 const plugins = require('./plugins');
 const cp = require('child_process');
 const program = require('commander');
+const {Compressor} = require('./compressor');
 var info = console.log;
 var debug = console.log;
 
 class Comtaku {
     constructor() {
+        this.comp = new Compressor();
     }
 
     async browseComic(url, opts={}) {
@@ -46,10 +48,11 @@ class Comtaku {
         let plugin = this.loadPlugin(url, opts);
         let page = await browser.newPage();
         await plugin.init(page);
-        let dir = await fs.mkdtemp(os.tmpdir());
-        let index = 1;
         await plugin.retry(plugin.open, page, url);
         if (!title) title = await plugin.findTitle(page);
+        let dir = path.resolve(opts.output, title);
+        await fs.ensureDir(dir);
+        let index = 1;
         let zipName = `${title}.zip`;
         let zipFullPath = path.resolve(opts.output, zipName);
         // check already download
@@ -69,7 +72,10 @@ class Comtaku {
         await page.close();
         await browser.close();
         info(`chapter ${title} read over`);
-        cp.execSync(`cd ${dir};zip '${zipName}' *;mv '${zipName}' '${zipFullPath}';rm -rf ${dir}`);
+        await this.comp.compress(dir, zipFullPath);
+        await fs.rmdir(dir);
+        // comp.compress('./test/亞人001話', './test/abc.zip');
+        // cp.execSync(`cd ${dir};zip '${zipName}' *;mv '${zipName}' '${zipFullPath}';rm -rf ${dir}`);
     }
 
     async isDownloaded(title, output) {
@@ -100,12 +106,14 @@ program
     .option('-w, --worker <number>', 'parallel wokers number', 2)
     .option('-o, --output <dir>', 'output dir')
     .option('-s, --search', 'search for comic name')
+    .option('--chrome', 'specify local chrome path')
     .arguments('<url>')
     .parse(process.argv);
 
 (async () => {
     try {
         let opts = program.opts();
+        if (!opts.chrome) opts.chrome = 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe';
         url = program.args[0];
         if (opts.debug) {
             opts = Object.assign(opts, {worker: 1, headless: false, slowMo: 200, devtools: true});
@@ -113,11 +121,11 @@ program
         if (opts.output) opts.output = path.resolve(process.cwd(), opts.output);
         else opts.output = process.cwd();
         await fs.ensureDir(opts.output);
-
+        opts.executablePath = opts.chrome;
         let otaku = new Comtaku();
         if (opts.search) {
             let list = await otaku.searchComic(url);
-            info(list);
+            console.table(list);
             return;
         }
         if (opts.chapter) {

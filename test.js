@@ -1,3 +1,10 @@
+const {Compressor} = require('./compressor');
+
+let comp = new Compressor();
+comp.compress('./test/亞人001話', './test/abc.zip');
+
+return;
+
 const puppeteer = require('puppeteer');
 var comicUrl = 'http://manhua.fzdm.com/3/Vol_001/';
 comicUrl = 'http://comic.ikkdm.co/comiclist/1733/index.htm';

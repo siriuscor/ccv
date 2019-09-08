@@ -8,6 +8,8 @@ const plugins = require('./plugins');
 const cp = require('child_process');
 const program = require('commander');
 const {Compressor} = require('./compressor');
+const rimraf = require('rimraf');
+const rmdir = require('util').promisify(rimraf);
 var info = console.log;
 var debug = console.log;
 
@@ -73,8 +75,7 @@ class Comtaku {
         await browser.close();
         info(`chapter ${title} read over`);
         await this.comp.compress(dir, zipFullPath);
-        await fs.rmdir(dir);
-        // comp.compress('./test/亞人001話', './test/abc.zip');
+        await rmdir(dir);
         // cp.execSync(`cd ${dir};zip '${zipName}' *;mv '${zipName}' '${zipFullPath}';rm -rf ${dir}`);
     }
 

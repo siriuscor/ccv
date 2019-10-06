@@ -1,6 +1,4 @@
-const {
-    URL
-} = require('url');
+const {URL} = require('url');
 // const Devices = require('puppeteer/DeviceDescriptors');
 const path = require('path');
 const fs = require('fs-extra');

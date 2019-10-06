@@ -1,9 +1,7 @@
 let {DefaultPlugin} = require('./default.js');
 class MHGPlugin extends DefaultPlugin{
     constructor(options) {
-        super(Object.assign({
-            emulator: null
-        }, options));
+        super(Object.assign({}, options));
     }
 
     static canHandle(url) {

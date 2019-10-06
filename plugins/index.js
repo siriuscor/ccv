@@ -1,17 +1,14 @@
-let {URL} = require('url');
-let {DefaultPlugin} = require('./default.js');
-let {FZDMPlugin} = require('./fzdm.js');
-let {MHFPlugin} = require('./manhuafen.js');
-let {DM5Plugin} = require('./dm5');
-let {MHGPlugin} = require('./manhuagui');
-
-let plugins = [FZDMPlugin, MHFPlugin, DM5Plugin, MHGPlugin];
+const {URL} = require('url');
+const fs = require('fs-extra');
+const path = require('path');
+let plugins = [];
+let loaded = false;
 
 function detect(url) {
     let u = new URL(url);
     let p = plugins.filter((p) => p.canHandle(u));
     if (p.length > 0) {
-        console.log(`PLUGIN: ${p[0].name} DETECTED`);
+        // console.log(`PLUGIN: ${p[0].name} DETECTED`);
         return p[0];
     } else {
         console.log(`PLUGIN: no PLUGIN can handle ${url}`);
@@ -19,10 +16,22 @@ function detect(url) {
     }
 }
 
+async function load() {
+    if (loaded) return;
+    let folders = await fs.readdir(path.resolve(__dirname, '.'));
+    folders.forEach((file) => {
+        if (file == 'index.js' || !file.endsWith('.js')) return;
+        let ps = require('./' + file);
+        for(let className in ps) {
+            plugins.push(ps[className]);
+        }
+    });
+}
+
 function list() {
     return plugins;
 }
 
 module.exports = {
-    detect, list
+    detect, list, load
 }

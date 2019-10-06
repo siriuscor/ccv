@@ -19,7 +19,7 @@ class Comtaku {
     }
 
     async browseComic(url, opts={}) {
-        let plugin = this.loadPlugin(url, opts);
+        let plugin = await this.loadPlugin(url, opts);
         let browser = await puppeteer.launch(Object.assign({ignoreHTTPSErrors: true}, opts));
         let page = await browser.newPage();
         await plugin.init(page);
@@ -47,7 +47,7 @@ class Comtaku {
         }
         info(`BEGIN Browse ${title} at ${url}`);
         let browser = await puppeteer.launch(Object.assign({ignoreHTTPSErrors: true}, opts));
-        let plugin = this.loadPlugin(url, opts);
+        let plugin = await this.loadPlugin(url, opts);
         let page = await browser.newPage();
         await plugin.init(page);
         await plugin.retry(plugin.open, page, url);
@@ -85,7 +85,8 @@ class Comtaku {
         return await fs.exists(zipFullPath);
     }
 
-    loadPlugin(url, opts) {
+    async loadPlugin(url, opts) {
+        await plugins.load();
         let plugin = plugins.detect(url);
         if (!plugin) throw new Error(`plugin not found for url ${url}`);
         return new plugin(opts);
@@ -97,8 +98,6 @@ class Comtaku {
         return [].concat(...list);
     }
 }
-
-
 
 program
     .version('0.0.1')

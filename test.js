@@ -1,8 +1,21 @@
-const {Compressor} = require('./compressor');
+const fs = require('fs-extra');
+(async() => {
+  let folders = await fs.readdir('plugins');
+  console.log(folders);
+})();
 
-let comp = new Compressor();
-comp.compress('./test/亞人001話', './test/abc.zip');
+return;
 
+// const {Compressor} = require('./compressor');
+
+// let comp = new Compressor();
+// comp.compress('./test/亞人001話', './test/abc.zip');
+const rim = require('rimraf');
+const util = require('util');
+const rmdir = util.promisify(rim);
+(async() => {
+let result = await rmdir('abc');
+})();
 return;
 
 const puppeteer = require('puppeteer');

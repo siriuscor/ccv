@@ -5,7 +5,7 @@ class MHGPlugin extends DefaultPlugin{
     }
 
     static canHandle(url) {
-        return (url.host == 'tw.manhuagui.com');
+        return (url.host == 'tw.manhuagui.com' || url.host == 'www.manhuagui.com');
     }
 
     async open(page, url) {
@@ -23,7 +23,8 @@ class MHGPlugin extends DefaultPlugin{
     async gotoNext(page) {
         let next = await this.findNext(page);
         await next.click({delay: 100});
-        await page.waitForSelector('#mangaBox', {visible: true});
+        await page.waitForSelector('#imgLoading', {hidden: true});
+        // await page.waitForSelector('#mangaBox', {visible: true});
     }
 
     async hasNext(page) {

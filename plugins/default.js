@@ -30,7 +30,8 @@ class DefaultPlugin {
         page.on('response', async (response) => {
             const url = new URL(response.url());
             let type = mime.getExtension(response.headers()['content-type']);
-            if (['jpeg', 'png', 'gif'].includes(type)) { // cache image response
+            if (type === 'webp') type = 'jpeg';
+            if (['jpeg', 'png', 'gif', 'webp'].includes(type)) { // cache image response
                 response.mimeType = type;
                 this.imageCache[url.href] = response;
             }
@@ -91,22 +92,6 @@ class DefaultPlugin {
             if (imgs.length == 0) return null;
             return imgs.sort((a, b) => b.offsetHeight*b.offsetWidth - a.offsetHeight*a.offsetWidth)[0].src;
         });
-        // const capture = await page.evaluateHandle(() => {
-        //     var all = $('img');
-        //     var biggest;
-        //     var max = 0;
-        //     for (var i = 0; i < all.length; i++) {
-        //         var item = $(all[i]);
-        //         var area = item.width() * item.height();
-        //         if (area > max) {
-        //             biggest = item;
-        //             max = area;
-        //         }
-        //     }
-        //     return biggest.get(0);
-        // });
-        // var property = await capture.getProperty('src');
-        // return await property.jsonValue();
     }
 
     async findImageAndSave(page, savePath) {
@@ -127,7 +112,7 @@ class DefaultPlugin {
             for (var i = 0; i < all.length; i++) {
                 var item = $(all[i]);
                 var text = item.text();
-                if (text == '下一页' || text == '下一頁') {
+                if (text.match('下一页') || text.match('下一頁')) {
                     return all[i];
                 }
             }

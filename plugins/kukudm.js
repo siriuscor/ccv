@@ -2,17 +2,20 @@ let {DefaultPlugin} = require('./default.js');
 let debug = console.log;
 class KukuPlugin extends DefaultPlugin{
     constructor(options) {
-        super(Object.assign({}, options));
+        super(Object.assign({filterResources: (url) => {
+            return url.match('pc.weizhenwx.com');
+        }}, options));
     }
-
+    
     static canHandle(url) {
-        return url.host.match('kukudm.com');
+        return url.host.match('kukudm.com') || url.host.match('comic.ikkdm.com');
     }
 
     async findChapters(page) {
         let hrefs = await page.$$eval('#comiclistn dd :first-child', a => {
             return a.map((i)=> {return {url:i.href, name:i.innerText}});
         });
+        // hrefs = hrefs.filter((a) => a.name.match('before'));
         return hrefs;
     }
 
@@ -23,7 +26,10 @@ class KukuPlugin extends DefaultPlugin{
     }
 
     async findNext(page) {
-        return await page.$('img:last-child');
+        return await page.evaluateHandle(() => {
+            var all = document.getElementsByTagName('a');
+            return all[all.length - 1];
+        });
     }
 }
 

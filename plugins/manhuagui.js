@@ -5,25 +5,25 @@ class MHGPlugin extends DefaultPlugin{
     }
 
     static canHandle(url) {
-        return (url.host == 'tw.manhuagui.com' || url.host == 'www.manhuagui.com');
+        return (url.host == 'tw.manhuagui.com' || url.host == 'www.mhgui.com');
     }
 
     async open(page, url) {
         await page.goto(url);
-        await page.waitForSelector('#imgLoading', {hidden: true});
+        await page.waitForSelector('#imgPreLoad', {hidden: true});
     }
 
     async findChapters(page) {
         let hrefs = await page.$$eval('.chapter-list a', a => {
             return a.map((i)=> {return {url:i.href, name:i.title}});
         });
-        return hrefs.reverse();
+        return hrefs;
     }
 
     async gotoNext(page) {
         let next = await this.findNext(page);
         await next.click({delay: 100});
-        await page.waitForSelector('#imgLoading', {hidden: true});
+        await page.waitForSelector('#imgPreLoad', {hidden: true});
         // await page.waitForSelector('#mangaBox', {visible: true});
     }
 

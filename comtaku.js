@@ -15,23 +15,47 @@ var debug = console.log;
 class Comtaku {
     constructor() {
         this.comp = new Compressor();
+        this.browser = null;
     }
 
     async browseComic(url, opts={}) {
         let plugin = await this.loadPlugin(url, opts);
         let browser = await puppeteer.launch(Object.assign({ignoreHTTPSErrors: true}, opts));
+        this.browser = browser;
         let page = await browser.newPage();
+
+        await fs.ensureDir(opts.output);
+        await fs.writeFile(path.resolve(opts.output, 'readme.txt'), url);
         await plugin.init(page);
         await plugin.retry(plugin.open, page, url);
         // await plugin.open(page, url);
+        let name = await plugin.findName(page);
         let chapters = await plugin.findChapters(page);
-        info(`FOUND ${chapters.length} Chapters`);
-        await browser.close();
-        let worker = new Array(opts.worker).fill(0);
-        let index = 0;
-        await Promise.all(worker.map(async item => {
-            while(chapters[index]) await this.browseChapter(chapters[index++], opts);
+        info(`Name ${name}, Found ${chapters.length} Chapters, Worker ${opts.worker}`);
+        if (name !== null) {
+            opts.output = path.resolve(opts.output, name);
+        }
+        let worker = new Array(parseInt(opts.worker)).fill(0);
+        let lowerBound = 0;
+        let upperBound = chapters.length - 1;
+        if (opts.range) {
+            lowerBound = opts.range.split('-')[0] || 0;
+            upperBound = opts.range.split('-')[1] || chapters.length - 1;
+            info(`Download Range specified ${lowerBound} - ${upperBound}`);
+        }
+        let index = lowerBound;
+        await Promise.all(worker.map(async (_, i) => {
+            while(index <= upperBound) {
+                let current = index++;
+                info(`Worker ${i} is Processing Index: ${current}, ${chapters[current].name}`);
+                try {
+                    await this.browseChapter(chapters[current], opts);
+                }catch(e) {
+                    info(`Worker ${i} Download ${JSON.stringify(chapters[current])} Failed,Index ${current} Error ${e.toString()}`)
+                }
+            }
         }));
+        await browser.close();
     }
 
     async browseChapter(url, opts={}) {
@@ -46,23 +70,25 @@ class Comtaku {
             return;
         }
         info(`Begin Browse ${title} at ${url}`);
-        let browser = await puppeteer.launch(Object.assign({ignoreHTTPSErrors: true}, opts));
+        if (!this.browser) {
+            this.browser = await puppeteer.launch(Object.assign({ignoreHTTPSErrors: true}, opts));
+        }
         let plugin = await this.loadPlugin(url, opts);
-        let page = await browser.newPage();
+        let page = await this.browser.newPage();
         await plugin.init(page);
         await plugin.retry(plugin.open, page, url);
         if (!title) title = await plugin.findTitle(page);
-        let dir = path.resolve(opts.output, title);
-        await fs.ensureDir(dir);
-        let index = 1;
-        let zipName = `${title}.zip`;
-        let zipFullPath = path.resolve(opts.output, zipName);
         // check already download
         if (await this.isDownloaded(title, opts.output)) {
             info(`${title} exists, skip download`);
             await page.close();
             return;
         }
+        let dir = path.resolve(opts.output, title);
+        await fs.ensureDir(dir);
+        let index = 1;
+        let zipName = `${title}.zip`;
+        let zipFullPath = path.resolve(opts.output, zipName);
         await plugin.findImageAndSave(page, path.resolve(dir, `${index}`));
         while(await plugin.hasNext(page)) {
             index ++;
@@ -72,7 +98,7 @@ class Comtaku {
             // debug(`save to ${path.resolve(dir, index+'')}`);
         }
         await page.close();
-        await browser.close();
+        // await browser.close();
         info(`chapter ${title} read over`);
         await this.comp.compress(dir, zipFullPath);
         await rmdir(dir);

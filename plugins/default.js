@@ -30,7 +30,9 @@ class DefaultPlugin {
         page.on('response', async (response) => {
             const url = new URL(response.url());
             let type = mime.getExtension(response.headers()['content-type']);
+            // console.log('request url', url.href, type);
             if (type === 'webp') type = 'jpeg';
+            if (type === 'bin') type = 'png';
             if (['jpeg', 'png', 'gif', 'webp'].includes(type)) { // cache image response
                 response.mimeType = type;
                 this.imageCache[url.href] = response;
@@ -47,11 +49,17 @@ class DefaultPlugin {
                 interceptedRequest.continue();
             });
         }
-        // page.on('console', msg => {
-            // console.log(`from console: ${msg.text()}`);
-        // });
+
+        if (this.options.debug) {
+            page.on('console', msg => {
+                console.log(`from console: ${msg.text()}`);
+            });
+        }
     }
 
+    async sleep(timeout) {
+        return new Promise(resolve => setTimeout(resolve, timeout));
+    }
     async retry(proc, ...args) {
         for (let i = 0; i < this.options.retry; i++) {
             try {
@@ -59,6 +67,7 @@ class DefaultPlugin {
             } catch (e) {
                 debug(`process error ${e.toString()}, retry ${i}`);
             }
+            await this.sleep(1000);
         }
         return await Promise.reject('process error reach max retry');
     }
@@ -81,6 +90,9 @@ class DefaultPlugin {
         ]);
     }
 
+    async findName(page) {
+        return null;
+    }
     async findChapters(page) {
         return [];
     }

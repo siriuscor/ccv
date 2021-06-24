@@ -1,3 +1,37 @@
+var p1 = function() { return new Promise((resolve, reject) => {
+  console.log('enter 1');
+  setTimeout(() => resolve('one'), 1000);
+});
+};
+var p2 = function() { return new Promise((resolve, reject) => {
+  console.log('enter 2');
+  setTimeout(() => resolve('two'), 2000);
+});
+}
+var p3 = function() { return new Promise((resolve, reject) => {
+  console.log('enter 3');
+  setTimeout(() => resolve('three'), 3000);
+});
+}
+var p4 = function() { return new Promise((resolve, reject) => {
+  console.log('enter 4');
+  setTimeout(() => resolve('four'), 4000);
+});}
+let p = [p1, p2, p3, p4];
+
+let worker = new Array(4).fill(0);
+Promise.all(worker.map(async function(i, j) {
+  console.log('worker', i, j);
+  return await p[j]();
+}))
+.then(values => {
+  console.log(values);
+})
+.catch(error => {
+  console.error(error.message)
+});
+
+return 
 const fs = require('fs-extra');
 (async() => {
   let folders = await fs.readdir('plugins');

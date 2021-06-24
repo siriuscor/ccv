@@ -9,8 +9,9 @@ program
     .option('-d, --debug', 'output extra debugging')
     .option('-c, --chapter', 'specify a chapter url')
     .option('-w, --worker <number>', 'parallel wokers number', 2)
-    .option('-o, --output <dir>', 'output dir')
+    .option('-o, --output <dir>', 'output dir', '.')
     .option('-s, --search', 'search for comic name')
+    .option('-r, --range <range>', 'specify chapter range', null)
     .option('--chrome', 'specify local chrome path')
     .arguments('<url>')
     .parse(process.argv);
@@ -47,3 +48,5 @@ program
 //./comtaku.js -o ../yaren https://manhua.fzdm.com/41/
 //./cli.js -o ../gui https://www.manhuagui.com/comic/19430/
 //node cli.js -o ../menghuan https://comic2.kukudm.com/comiclist/2236/index.htm
+
+//https://www.mhgui.com/comic/30252/ 

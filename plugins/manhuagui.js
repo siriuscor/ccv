@@ -4,13 +4,18 @@ class MHGPlugin extends DefaultPlugin{
         super(Object.assign({}, options));
     }
 
+    async findName(page) {
+        return null;
+    }
+
     static canHandle(url) {
-        return (url.host == 'tw.manhuagui.com' || url.host == 'www.mhgui.com');
+        return (url.host == 'tw.manhuagui.com' || url.host == 'www.mhgui.com' || url.host == 'www.manhuagui.com');
     }
 
     async open(page, url) {
         await page.goto(url);
-        await page.waitForSelector('#imgPreLoad', {hidden: true});
+        // await page.waitForSelector('#imgPreLoad', {hidden: true});
+        await page.waitForSelector('#imgLoading', {hidden: true});
     }
 
     async findChapters(page) {
@@ -23,7 +28,7 @@ class MHGPlugin extends DefaultPlugin{
     async gotoNext(page) {
         let next = await this.findNext(page);
         await next.click({delay: 100});
-        await page.waitForSelector('#imgPreLoad', {hidden: true});
+        await page.waitForSelector('#imgLoading', {hidden: true});
         // await page.waitForSelector('#mangaBox', {visible: true});
     }
 
@@ -33,6 +38,12 @@ class MHGPlugin extends DefaultPlugin{
         });
         if (lastPage) return false;
         else return true;
+    }
+
+    async findImage(page) {
+        return await page.$$eval('#mangaFile', imgs => {
+            return imgs[0].src;
+        });
     }
 }
 

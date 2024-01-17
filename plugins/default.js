@@ -1,10 +1,15 @@
 const {URL} = require('url');
-// const Devices = require('puppeteer/DeviceDescriptors');
 const path = require('path');
 const fs = require('fs-extra');
 const mime = require('mime');
+const http = require('http');
+const https = require('https');
+const child_process = require('child_process');
+const exec = require('util').promisify(child_process.exec);
 
-const debug = console.log;
+var Stream = require('stream').Transform;
+
+const debug = require('debug')('plugin-default');
 class DefaultPlugin {
     constructor(options) {
         this.options = Object.assign({}, {
@@ -31,7 +36,7 @@ class DefaultPlugin {
             const url = new URL(response.url());
             let type = mime.getExtension(response.headers()['content-type']);
             // console.log('request url', url.href, type);
-            if (type === 'webp') type = 'jpeg';
+            // if (type === 'webp') type = 'jpeg';
             if (type === 'bin') type = 'png';
             if (['jpeg', 'png', 'gif', 'webp'].includes(type)) { // cache image response
                 response.mimeType = type;
@@ -109,14 +114,52 @@ class DefaultPlugin {
     async findImageAndSave(page, savePath) {
         let url = await this.findImage(page);
         if (!this.imageCache[url]) {
-            debug(`image ${url} not found in cache`);
-            return;
+            debug(`image ${url} not found in cache, cache check`);
+            debug(Object.keys(this.imageCache));
+            throw new Error('image not found');
+            // await page.goto(url);
+            // return await this.findImageAndSave(page, savePath);
+            // return await this.downloadImage(url, savePath);
         }
         let type = this.imageCache[url].mimeType;
         savePath = savePath + '.' + type;
         // debug(`save image ${url} -> ${savePath}`);
         await fs.outputFile(savePath, await this.imageCache[url].buffer());
+
+        if (type == 'webp') {
+            await this.convertWebp(savePath);
+        }
     }
+
+    async convertWebp(path) {
+        let jpgPath = path.replace(/\.webp$/, '.jpg');
+        await exec(`.\\ffmpeg.exe -hide_banner -loglevel error -y -i "${path}" "${jpgPath}"`);
+        await fs.remove(path);
+    }
+
+    downloadImage(url, filename) {
+        return new Promise((resolve, reject) => {
+            var client = http;
+            if (url.toString().indexOf("https") === 0){
+                client = https;
+            }
+
+            client.request(url, function(response) {
+                var data = new Stream();
+                response.on('data', function(chunk) {
+                    data.push(chunk);
+                });
+                response.on('end', function() {
+                    fs.writeFileSync(filename, data.read());
+                    resolve();
+                });
+                response.on('error', (e) => {
+                    reject(e);
+                });
+            }).end();
+        })
+    }
+
 
     async findNext(page) {
         return await page.evaluateHandle(() => {

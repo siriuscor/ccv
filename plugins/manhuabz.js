@@ -10,6 +10,7 @@ class MHBZPlugin extends DefaultPlugin{
 
     async findChapters(page) {
         let hrefs = await page.$$eval('#chapterlistload a', a => {
+            //第192話 櫻島結界（2）                    
             return a.map((i)=> {return {url:i.href, name:i.text.split(' ')[0].trim()}});
         });
         return hrefs.reverse();
@@ -26,8 +27,8 @@ class MHBZPlugin extends DefaultPlugin{
                 ShowNext()
             });
         await page.waitFor(1000);
-        await page.waitForSelector('#cp_image');
-        // await page.waitForSelector('#imgLoading', {hidden: true});
+        // await page.waitForSelector('#cp_image');
+        await page.waitForSelector('#imgloading', {hidden: true});
         // ]);
     }
 

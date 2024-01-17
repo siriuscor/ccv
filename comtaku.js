@@ -11,6 +11,7 @@ const rimraf = require('rimraf');
 const rmdir = require('util').promisify(rimraf);
 var info = console.log;
 var debug = console.log;
+const cliProgress = require('cli-progress');
 
 class Comtaku {
     constructor() {
@@ -28,7 +29,6 @@ class Comtaku {
         await fs.writeFile(path.resolve(opts.output, 'readme.txt'), url);
         await plugin.init(page);
         await plugin.retry(plugin.open, page, url);
-        // await plugin.open(page, url);
         let name = await plugin.findName(page);
         let chapters = await plugin.findChapters(page);
         info(`Name ${name}, Found ${chapters.length} Chapters, Worker ${opts.worker}`);
@@ -43,22 +43,37 @@ class Comtaku {
             upperBound = opts.range.split('-')[1] || chapters.length - 1;
             info(`Download Range specified ${lowerBound} - ${upperBound}`);
         }
+
+        // let mbar;
+        // if (opts.debug) {
+        //     mbar = new cliProgress.MultiBar({
+        //         clearOnComplete: false,
+        //         hideCursor: true,
+        //         format: ' {worker} |{bar} | {filename} | {value}/{total}',
+        //     }, cliProgress.Presets.legacy);
+        // }
+
         let index = lowerBound;
         await Promise.all(worker.map(async (_, i) => {
+            // let bar = multibar.create(1000, 0);
+            let workerLog = function(){};//info.bind(info, `[Worker ${i}]`);
             while(index <= upperBound) {
                 let current = index++;
-                info(`Worker ${i} is Processing Index: ${current}, ${chapters[current].name}`);
+                workerLog(`Processing Index: ${current}, ${chapters[current].name}`);
+                // bar.update({filename: chapters[current].name, worker:'WK'+i});
+                // info(`[Worker ${i}] is Processing Index: ${current}, ${chapters[current].name}`);
                 try {
-                    await this.browseChapter(chapters[current], opts);
+                    await this.browseChapter(chapters[current], opts, workerLog, bar);
                 }catch(e) {
-                    info(`Worker ${i} Download ${JSON.stringify(chapters[current])} Failed,Index ${current} Error ${e.toString()}`)
+                    workerLog(`Download ${JSON.stringify(chapters[current])} Failed,Index ${current} Error ${e.toString()}`)
                 }
             }
         }));
         await browser.close();
+        multibar.stop();
     }
 
-    async browseChapter(url, opts={}) {
+    async browseChapter(url, opts={}, workerLog, bar) {
         let title = null;
         if (typeof url == 'object') {
             let chapterInfo = url;
@@ -66,10 +81,10 @@ class Comtaku {
             title = chapterInfo.name;
         }
         if (await this.isDownloaded(title, opts.output)) {
-            info(`${title} exists, skip download`);
+            workerLog(`${title} exists, skip download`);
             return;
         }
-        info(`Begin Browse ${title} at ${url}`);
+        workerLog(`Begin Browse ${title} at ${url}`);
         if (!this.browser) {
             this.browser = await puppeteer.launch(Object.assign({ignoreHTTPSErrors: true}, opts));
         }
@@ -80,7 +95,7 @@ class Comtaku {
         if (!title) title = await plugin.findTitle(page);
         // check already download
         if (await this.isDownloaded(title, opts.output)) {
-            info(`${title} exists, skip download`);
+            workerLog(`${title} exists, skip download`);
             await page.close();
             return;
         }
@@ -94,12 +109,12 @@ class Comtaku {
             index ++;
             await plugin.retry(plugin.gotoNext, page);
             await plugin.findImageAndSave(page, path.resolve(dir, `${index}`));
-            info(`save for ${title}/${index}`);
+            workerLog(`save for ${title}/${index}`);
             // debug(`save to ${path.resolve(dir, index+'')}`);
         }
         await page.close();
         // await browser.close();
-        info(`chapter ${title} read over`);
+        workerLog(`chapter ${title} read over`);
         await this.comp.compress(dir, zipFullPath);
         await rmdir(dir);
         // cp.execSync(`cd ${dir};zip '${zipName}' *;mv '${zipName}' '${zipFullPath}';rm -rf ${dir}`);

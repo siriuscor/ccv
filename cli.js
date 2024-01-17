@@ -8,7 +8,7 @@ program
     .version('0.0.1')
     .option('-d, --debug', 'output extra debugging')
     .option('-c, --chapter', 'specify a chapter url')
-    .option('-w, --worker <number>', 'parallel wokers number', 2)
+    .option('-w, --worker <number>', 'parallel wokers number', 4)
     .option('-o, --output <dir>', 'output dir', '.')
     .option('-s, --search', 'search for comic name')
     .option('-r, --range <range>', 'specify chapter range', null)

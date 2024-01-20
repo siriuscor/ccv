@@ -21,6 +21,7 @@ async function load() {
     let folders = await fs.readdir(path.resolve(__dirname, '.'));
     folders.forEach((file) => {
         if (file == 'index.js' || !file.endsWith('.js')) return;
+        if (file == 'default.js') return;
         let ps = require('./' + file);
         for(let className in ps) {
             plugins.push(ps[className]);

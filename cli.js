@@ -12,6 +12,7 @@ program
     .option('-o, --output <dir>', 'output dir', '.')
     .option('-s, --search', 'search for comic name')
     .option('-r, --range <range>', 'specify chapter range', null)
+    .option('-i, --info', 'show comic info only')
     .option('--chrome', 'specify local chrome path')
     .arguments('<url>')
     .parse(process.argv);

@@ -4,8 +4,15 @@ class MHGPlugin extends DefaultPlugin{
         super(Object.assign({}, options));
     }
 
-    async findName(page) {
-        return null;
+    async findMeta(page) {
+        return {
+            name: await page.$eval('.book-title h1', el => el.innerText),
+            alias:[await page.$eval('.book-title h2', el => el.innerText)],
+            authors: [await page.$eval('.book-detail li:nth-child(2) span:nth-child(2) a', el => el.innerText)],
+            description: await page.$eval('.book-intro #intro-cut', el => el.innerText),
+            status: await page.$eval('.book-detail .status span span', el => el.innerText),
+            chapters: await this.findChapters(page),
+        };
     }
 
     static canHandle(url) {

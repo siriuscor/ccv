@@ -4,14 +4,16 @@ const fs = require('fs-extra');
 const mime = require('mime');
 const http = require('http');
 const https = require('https');
+const {EventEmitter} = require('events');
 const child_process = require('child_process');
 const exec = require('util').promisify(child_process.exec);
-
 var Stream = require('stream').Transform;
+const debug = require('debug')('comtaku:default');
+const utils = require('../utils');
 
-const debug = require('debug')('plugin-default');
-class DefaultPlugin {
+class DefaultPlugin extends EventEmitter{
     constructor(options) {
+        super();
         this.options = Object.assign({}, {
             emulator: null,
             retry: 10,
@@ -22,12 +24,12 @@ class DefaultPlugin {
     }
 
     static canHandle(url) {
-        return false;
+        throw new Error('not implemented');
     }
 
     /* search for comic name in site */
     static async search(name) {
-        return [{name:'123123', url:'adfsdfsadf', from:'abc'}, {name:'123123', url:'adfsdfsadf', from:'abc'}];
+        return [];
     }
 
     async init(page) {
@@ -95,15 +97,26 @@ class DefaultPlugin {
         ]);
     }
 
-    async findName(page) {
-        return null;
+    async findMeta(page) {
+        return {
+            name: '',
+            alias:{},
+            authors: [],
+            published: '',
+            genres: [],
+            description: '',
+            status: '',
+            volumes: [],
+            chapters: await this.findChapters(page)
+        };
     }
     async findChapters(page) {
-        return [];
+        throw new Error('not implemented');
     }
-    async findTitle(page) {
+    async findChapterTitle(page) {
         return await page.title();
     }
+
     async findImage(page) {
         return await page.$$eval('img', imgs => {
             if (imgs.length == 0) return null;
@@ -123,7 +136,7 @@ class DefaultPlugin {
         }
         let type = this.imageCache[url].mimeType;
         savePath = savePath + '.' + type;
-        // debug(`save image ${url} -> ${savePath}`);
+        debug(`save image ${url} -> ${savePath}`);
         await fs.outputFile(savePath, await this.imageCache[url].buffer());
 
         if (type == 'webp') {
@@ -173,6 +186,32 @@ class DefaultPlugin {
             }
             return null;
         });
+    }
+
+    async downloadChapter(browser, title, url, base) {
+        let page = await browser.newPage();
+        await this.init(page);
+        await this.retry(this.open, page, url);
+        if (!title) title = await this.findChapterTitle(page);
+        let dir = path.resolve(base, title);
+        await fs.ensureDir(dir);
+        let index = 1;
+        await this.findImageAndSave(page, path.resolve(dir, `${index}`));
+        while(await this.hasNext(page)) {
+            index ++;
+            await this.retry(this.gotoNext, page);
+            await this.findImageAndSave(page, path.resolve(dir, `${index}`));
+            debug('download image', `${title}/${index}`);
+            // this.emit('progress', 1);
+        }
+        await page.close();
+        await this.compressChapter(title, 'zip', base);
+    }
+
+    async compressChapter(title, type, base) {
+        let dir = path.resolve(base, title);
+        await utils.compress(dir, path.resolve(base, `${title}.${type}`));
+        await utils.rmdir(dir);
     }
 }
 

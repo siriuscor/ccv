@@ -1,10 +1,10 @@
 const fs = require('fs-extra');
 const JSZip = require('jszip');
 const path = require('path');
-class Compressor {
-    constructor() {
-    }
-    async compress(dir, zipName) {
+// class Compressor {
+    // constructor() {
+    // }
+    async function compress(dir, zipName) {
         let list = await fs.readdir(dir);
         var zip = new JSZip();
         for(let i = 0; i < list.length; i++) {
@@ -15,6 +15,7 @@ class Compressor {
         let content = await zip.generateAsync({type:"nodebuffer"});
         await fs.outputFile(zipName, content);
     }
-}
+// }
 
-module.exports = {Compressor};
+// module.exports = {Compressor};
+module.exports = compress;

@@ -13,14 +13,20 @@ program
     .option('-s, --search', 'search for comic name')
     .option('-r, --range <range>', 'specify chapter range', null)
     .option('-i, --info', 'show comic info only')
-    .option('--chrome', 'specify local chrome path')
+    .option('--chrome <path>', 'specify local chrome path')
     .arguments('<url>')
     .parse(process.argv);
 
 (async () => {
     try {
         let opts = program.opts();
-        if (!opts.chrome) opts.chrome = 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe';
+        if (!opts.chrome) {
+            if (process.platform === "win32") {
+                opts.chrome = 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe';
+            } else {
+                opts.chrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+            }
+        }
         url = program.args[0];
         if (opts.debug) {
             opts = Object.assign(opts, {worker: 1, headless: false, slowMo: 200, devtools: true});

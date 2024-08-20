@@ -94,7 +94,7 @@ class Comtaku {
     }
 
     async isDownloaded(title, output) {
-        let zipName = `${title}.zip`;
+        let zipName = `${title}.cbz`;
         let zipFullPath = path.resolve(output, zipName);
         return await fs.exists(zipFullPath);
     }

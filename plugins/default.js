@@ -68,15 +68,17 @@ class DefaultPlugin extends EventEmitter{
         return new Promise(resolve => setTimeout(resolve, timeout));
     }
     async retry(proc, ...args) {
+        let last_error = null;
         for (let i = 0; i < this.options.retry; i++) {
             try {
                 return await proc.apply(this, args);
             } catch (e) {
+                last_error = e;
                 debug(`process error ${e.toString()}, retry ${i}`);
             }
             await this.sleep(1000);
         }
-        return await Promise.reject('process error reach max retry');
+        return await Promise.reject('process error reach max retry, last error:' + e.toString());
     }
 
     async open(page, url) {
@@ -205,7 +207,8 @@ class DefaultPlugin extends EventEmitter{
             // this.emit('progress', 1);
         }
         await page.close();
-        await this.compressChapter(title, 'zip', base);
+        // await this.compressChapter(title, 'zip', base); // cbz
+        await this.compressChapter(title, 'cbz', base); // cbz
     }
 
     async compressChapter(title, type, base) {

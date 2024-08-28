@@ -2,7 +2,7 @@ const {BrowserWindow, app} = require("electron");
 const pie = require("puppeteer-in-electron")
 const puppeteer = require("puppeteer-core");
 const fs = require('fs-extra');
-const {Mantaku} = require('./mantaku');
+const {Mantaku, SiteManager} = require('./mantaku');
 
 const main = async () => {
     const mainUI = new BrowserWindow({
@@ -26,15 +26,18 @@ const main = async () => {
     let url = "https://www.mangabz.com/31141bz/";
     url = "https://www.manhuagui.com/comic/2566/";
     // url = "https://www.mangabz.com/m355521-p9/";
-    await window.loadURL(url);
+    // await window.loadURL(url);
 
     const page = await pie.getPage(browser, window);
     
-    let cd = new ChapterDownloader();
-    cd.on('progress', (index, total) => {
-        console.log(index, total);
-    });
-    await cd.download(page, 'https://www.manhuagui.com/comic/21107/','test', './');
+    await SiteManager.load();
+    let list = await SiteManager.search(page, 'mangabz', '火影');
+    console.log(list);
+    // let cd = new ChapterDownloader();
+    // cd.on('progress', (index, total) => {
+        // console.log(index, total);
+    // });
+    // await cd.download(page, 'https://www.manhuagui.com/comic/21107/','test', './');
 
     // 
     // let mantaku = new Mantaku();
@@ -114,5 +117,7 @@ const main = async () => {
 
 (async function() {
     await pie.initialize(app);
-    app.whenReady().then(main);
+    app.whenReady().then(main).catch(e => {
+        console.error("CATCH ERROR", e);
+    });
 })();

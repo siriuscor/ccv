@@ -1,21 +1,24 @@
 const fs = require('fs-extra');
 const child_process = require('child_process');
-const json5 = require('json5');
-require('json5/lib/register')
-const setting = require('./setting.json5');
+// const json5 = require('json5');
+// require('json5/lib/register')
+// const setting = require('./setting.json5');
 
 class Librarian {
-    constructor() {
-        // this.baseDir = process.cwd();
+    constructor(base) {
+        this.base = base;
     }
-
-    async scanFolder(folder) {
+    async findManga(url) {
+        return true; // TODO:implement
+    }
+    async scanManga() {
+        let folder = this.base;
         let files = await fs.readdir(folder);
         let books = [];
         for (let file of files) {
             let stat = await fs.stat(file);
             if (stat.isDirectory()) {
-                let book = new Book();
+                let book = new Manga();
                 book.name = file;
                 let chapters = await fs.readdir(file);
                 for (let chapter of chapters) {
@@ -30,7 +33,8 @@ class Librarian {
 }
 
 class Manga {
-    constructor(name, url) {
+    constructor(path, mangaInfo) {
     }
 }
 
+module.exports = {Librarian, Manga};

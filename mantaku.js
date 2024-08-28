@@ -3,85 +3,95 @@ const {EventEmitter} = require('events');
 const mime = require('mime');
 const p = require('path');
 const utils = require('./utils');
-require('json5/lib/register')
-const setting = require('./setting.json5');
+// require('json5/lib/register')
+// const setting = require('./setting.json5');
 
 class Mantaku {
-    constructor(opts) {
-        // super();
-        this.opts = Object.assign({}, {
-            emulator: null,
-            retry: 10,
-            requestTimeout: 30000,
-            filterResources: null,
-            injectorPath: __dirname + '/injectors/',
-        }, opts);
+    constructor() {
+        this.browser = null;
     }
-    // selectInjector(url) {
-    //     let mapping = {
-    //         'mangabz.js': ['www.mangabz.com', 'www.xmanhua.com'],
-    //         'manhuagui.js': ['www.manhuagui.com', 'tw.manhuagui.com', 'www.mhgui.com'],
-    //     }
+    async init(opts) {
+        opts = opts || {};
+        await SiteManager.load();
+        if (opts.usePuppeteer) {
+            await this.initHeadlessBrowser(opts.puppeteerOpts);
+        }
+    }
 
-    //     for (let file in mapping) {
-    //         let match = mapping[file].filter((regex) => {
-    //             return url.match(regex);
-    //         });
-    //         if (match.length > 0) {
-    //             return file;
-    //         }
-    //     }
-    //     return null;
-    // }
-    // async inject(page) {
-    //     await page.evaluate(await fs.readFile(this.opts.injectorPath + 'common.js', 'utf8'));
-    //     let siteJS = this.selectInjector(page.url());
-    //     if (!siteJS) throw Error('No injector found for ' + page.url());
-    //     await page.evaluate(await fs.readFile(this.opts.injectorPath + siteJS, 'utf8'));
-    // }
-    // async searchManga(page, query) {
-    //     await this.inject(page);
-    //     return await page.evaluate((query) => {
-    //         return __mantaku.searchInfo(query);
-    //     }, query);
-    // }
+    listSites() {
+        return SiteManager.list();
+    }
+
+    async initHeadlessBrowser(opts) {
+        const puppeteer = require('puppeteer-core');
+        opts = Object.assign({ignoreHTTPSErrors: true}, opts);
+        if (!opts.executablePath) {
+            if (process.platform === "win32") {
+                opts.executablePath = 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe';
+            } else {
+                opts.executablePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+            }
+        }
+        this.browser = await puppeteer.launch(opts);
+    }
+
+    async newBrowserPage() {
+        return await this.browser.newPage();
+    }
 
     async browseManga(page) {
-        await this.inject(page);
+        await SiteManager.injectSiteScript(page);
         return await page.evaluate(() => {
             return __mantaku.mangaInfo();
         });
     }
 
+    async DownloadChapter(page, url, title, path) {
+        let cd = new ChapterDownloader();
+        cd.download(page, url, title, path);
+        return cd;
+    }
+
+    async search(page, siteName, keyword) {
+        return await SiteManager.search(page, siteName, keyword);
+    }
 }
 
 class SiteManager {
-    static site = null;
-    static scriptPath = __dirname + '/injectors/';
-    // constructor() {
-    //     this.sites = null;
-    //     this.scriptPath = __dirname + '/injectors/';
-    // }
+    static sites = null;
+    static scriptPath = __dirname + '/sites/';
     static async load(forceReload = false) {
         if (this.sites && !forceReload) return;
+        this.sites = {};
         let scriptPath = this.scriptPath;
         let files = await fs.readdir(scriptPath);
         let scripts = files.filter((file) => file.endsWith('.js'));
-        console.log('load scirpt', scripts);
+        // console.log('load scirpt', scripts);
         for (let file of scripts) {
             if (file == 'common.js') continue;
             let site = require(scriptPath + file);
-            this.sites.push({
+            this.sites[site.name] = {
                 name: site.name,
+                home: site.home,
                 canHandle: site.canHandle,
                 searchUrl: site.searchUrl,
                 path: scriptPath + file,
-            });
+            };
         }
     }
 
+    static list() {
+        let l = [];
+        for (let siteName in this.sites) {
+            let site = this.sites[siteName];
+            l.push({name: site.name, home: site.home});
+        }
+        return l;
+    }
+
     static detect(url) {
-        for (let site of this.sites) {
+        for (let siteName in this.sites) {
+            let site = this.sites[siteName];
             if (site.canHandle && site.canHandle(url)) {
                 return site;
             }
@@ -91,16 +101,27 @@ class SiteManager {
 
     static async injectSiteScript(page) {
         await page.evaluate(await fs.readFile(this.scriptPath + 'common.js', 'utf8'));
-        let siteJS = this.detect(page.url());
-        if (!siteJS) throw Error('No injector found for ' + page.url());
-        await page.evaluate(await fs.readFile(this.scriptPath + siteJS, 'utf8'));
+        let site = this.detect(page.url());
+        if (!site) throw Error('No injector found for ' + page.url());
+        await page.evaluate(await fs.readFile(site.path, 'utf8'));
+    }
+
+    static async search(page, siteName, keyword) {
+        let site = this.sites[siteName];
+        if (!site) throw new Error('site not found');
+        let url = site.searchUrl(keyword);
+        await page.goto(url);
+        await this.injectSiteScript(page);
+        let result = await page.evaluate(() => {
+            return __mantaku.search();
+        });
+        return result;
     }
 }
 
 class ChapterDownloader extends EventEmitter{
     constructor() {
         super();
-        // this.siteManager = new SiteManager();
     }
 
     async download(page, url, title, path) {
@@ -155,4 +176,4 @@ class ChapterDownloader extends EventEmitter{
     }
 }
 
-module.exports = {Mantaku, ChapterDownloader};
+module.exports = {Mantaku, ChapterDownloader, SiteManager};

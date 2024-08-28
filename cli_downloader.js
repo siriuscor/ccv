@@ -4,7 +4,7 @@ const {Librarian, Manga} = require('./librarian');
 const cliProgress = require('cli-progress');
 const fs = require('fs-extra');
 const {TaskManager} = require('./task');
-
+const tableSelect = require('./table_select').default;
 require('json5/lib/register')
 // const setting = require('./setting.json5');
 
@@ -51,10 +51,13 @@ async function main() {
     
     await mantaku.init({
         usePuppeteer: true,
-        // puppeteerOpts: {
+        puppeteerOpts: {
+            // headless: false, 
+            // slowMo: 200, 
+            // devtools: true
         //     headless: true,
         //     // executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-        // }
+        }
     });
     await home();
 }
@@ -123,10 +126,18 @@ async function showManga(url) {
     let choices = mangaInfo.chapters.map((m, i) => {
         return {name: m.title, value: m, description: m.url, /*checked: true*/};
     });
-    const selectedChapters = await checkbox({ // todo: use widther prompt
+    // const selectedChapters = await checkbox({ // todo: use widther prompt
+    //     message: 'Select chapters to download',
+    //     choices: choices,
+    //     pageSize: 20
+    // });
+
+    const selectedChapters = await tableSelect({
         message: 'Select chapters to download',
         choices: choices,
-        pageSize: 20
+        // pageSize: 20
+        column: 8,
+        loop: false,
     });
     // console.log(selectedChapters);
 

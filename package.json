@@ -20,7 +20,8 @@
     "puppeteer-in-electron": "^3.0.5",
     "read-chunk": "^4.0.3",
     "rimraf": "^3.0.0",
-    "webp-converter": "^2.3.3"
+    "webp-converter": "^2.3.3",
+    "yoctocolors-cjs": "^2.1.2"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

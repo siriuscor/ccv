@@ -3,5 +3,6 @@
     //"ext": "cbz",
     "chrome": "",
     "concurrent": 2,
+    "debugMode": false,
     
 }

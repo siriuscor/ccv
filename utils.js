@@ -20,6 +20,24 @@ function fetchMangaDB(name) {
 
 }
 
+async function sleep(timeout) {
+    return new Promise(resolve => setTimeout(resolve, timeout));
+}
+async function retry(proc, ...args) {
+    let last_error = null;
+    for (let i = 0; i < 3; i++) {
+        try {
+            return await proc(...args);
+        } catch (e) {
+            last_error = e;
+        }
+        await sleep(1000);
+    }
+    throw last_error;
+    // return await Promise.reject(last_error);
+}
+
 module.exports = {
-    fetchMangaDB, compress, rmdir
+    fetchMangaDB, compress, rmdir,
+    sleep, retry,
 }

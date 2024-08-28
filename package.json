@@ -4,6 +4,7 @@
   "description": "comic downloader",
   "main": "main.js",
   "dependencies": {
+    "@cliqz/adblocker-puppeteer": "^1.33.0",
     "@inquirer/prompts": "^5.3.8",
     "cli-progress": "^3.12.0",
     "commander": "^3.0.1",

@@ -33,10 +33,14 @@ class Mantaku {
             }
         }
         this.browser = await puppeteer.launch(opts);
+        const { PuppeteerBlocker } = require('@cliqz/adblocker-puppeteer');
+        this.blocker = PuppeteerBlocker.parse(fs.readFileSync('easylist.txt', 'utf-8'));
     }
 
     async newBrowserPage() {
-        return await this.browser.newPage();
+        let page = await this.browser.newPage();
+        this.blocker.enableBlockingInPage(page);
+        return page;
     }
 
     async browseManga(page) {
@@ -70,7 +74,8 @@ class SiteManager {
         for (let file of scripts) {
             if (file == 'common.js') continue;
             let site = require(scriptPath + file);
-            this.sites[site.name] = {
+            this.sites[site.id] = {
+                id: site.id,
                 name: site.name,
                 home: site.home,
                 canHandle: site.canHandle,
@@ -84,7 +89,7 @@ class SiteManager {
         let l = [];
         for (let siteName in this.sites) {
             let site = this.sites[siteName];
-            l.push({name: site.name, home: site.home});
+            l.push({id: site.id, name: site.name, home: site.home});
         }
         return l;
     }
@@ -110,7 +115,7 @@ class SiteManager {
         let site = this.sites[siteName];
         if (!site) throw new Error('site not found');
         let url = site.searchUrl(keyword);
-        await page.goto(url);
+        await utils.retry(page.goto.bind(page), url);
         await this.injectSiteScript(page);
         let result = await page.evaluate(() => {
             return __mantaku.search();

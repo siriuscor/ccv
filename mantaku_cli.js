@@ -6,7 +6,7 @@ const fs = require('fs-extra');
 const {TaskManager} = require('./task');
 const tableSelect = require('./table_select').default;
 require('json5/lib/register')
-// const setting = require('./setting.json5');
+const SETTING_PATH = './setting.json5';
 
 function banner() {
     console.log(`                                                  
@@ -20,22 +20,23 @@ function banner() {
 
 let mantaku = null;
 let librarian = null;
+let setting = null;
 
-function twirlTimer() {
-    var P = ["\\", "|", "/", "-"];
+function twirlTimer(str) {
+    const icon = ['⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
     var x = 0;
     return setInterval(function() {
-      process.stdout.write("\r" + P[x++]);
-      x &= 3;
-    }, 250);
-}
+      process.stdout.write("\r" + icon[x++] + str);
+      x %= icon.length;
+    }, 200);}
 let loading = null;
 function startLoading() {
-    loading = twirlTimer();
+    loading = twirlTimer(' 读取中...');
 }
 
 function stopLoading() {
     clearInterval(loading);
+    process.stdout.write("\r");
 }
 
 async function main() {
@@ -43,33 +44,31 @@ async function main() {
     if (!await fs.exists('./librarian.json5')) { // init librarian json
         await fs.writeFile('./librarian.json5', '{}');
     }
-    if (!await fs.exists('./setting.json5')) {
-        await initSetting();
+    if (!await fs.exists(SETTING_PATH)) {
+        await fs.copyFile('./setting-sample.json5', SETTING_PATH);
     }
+    setting = require(SETTING_PATH);
+    
     mantaku = new Mantaku();
     librarian = new Librarian('./');
-    
+    let puppeteerOpts = setting.debugMode? {
+        headless: false, slowMo: 200, devtools:true
+    }:{};
     await mantaku.init({
         usePuppeteer: true,
-        puppeteerOpts: {
-            // headless: false, 
-            // slowMo: 200, 
-            // devtools: true
-        //     headless: true,
-        //     // executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-        }
+        puppeteerOpts,
     });
     await home();
 }
 
 async function home() {
+    
     const op1 = await select({
-        message: 'Select an option',
+        message: '欢迎使用Mantaku,请选择(随时用Ctrl+C退出)',
         choices: [
-          {name: 'Search Manga', value: 'search',},
-        //   {name: 'Supported Sites', value: 'sites',},
-          {name: 'Settings',value: 'setting',},
-          {name: 'Quit', value: 'quit',},
+          {name: '搜索', value: 'search',},
+          {name: '设置',value: 'setting',},
+          {name: '退出', value: 'quit',},
         ],
     });
     
@@ -85,31 +84,34 @@ async function home() {
             await search();
             break;
         case 'setting':
-            await setting();
+            await goSetting();
             break;
     }
 }
 
 async function search() {
     let site = await select({
-        message: 'Select a site',
+        message: '选择搜索的站点',
         choices: mantaku.listSites().map((m) => {
-            return {name: m.name, value: m.name, description: m.home};
+            return {name: m.name, value: m.id, description: m.home};
         }),
     });
-    const keyword = await input({ message: 'Enter keyword:' });
+    const keyword = await input({ message: '输入关键字:',});
     startLoading();
     let page = await mantaku.newBrowserPage();
     let list = await mantaku.search(page, site, keyword);
+    stopLoading();
+    if (list.length <= 0) {
+        console.log('未搜索到结果');
+        process.exit();
+    }
     let choices = list.map((m) => {
         return {name: m.title + (m.author?`(${m.author})`:''), value: m.url, description: m.url};
     });
-    stopLoading();
     const op2 = await select({
-        message: 'Select a manga',
+        message: '选择搜索结果',
         choices: choices,
     });
-    // console.log(op2);
     await showManga(op2);
 }
 
@@ -117,10 +119,10 @@ async function showManga(url) {
     let page = await mantaku.newBrowserPage();
     await page.goto(url);
     let mangaInfo = await mantaku.browseManga(page);
-    console.log(`Title: ${mangaInfo.title}`);
-    console.log(`Author: ${mangaInfo.author}`);
-    console.log(`Intro: ${mangaInfo.intro}`);
-    console.log(`Status: ${mangaInfo.status}`);
+    console.log(`标题: ${mangaInfo.title}`);
+    console.log(`作者: ${mangaInfo.author}`);
+    console.log(`介绍: ${mangaInfo.intro}`);
+    console.log(`状态: ${mangaInfo.status}`);
 
     // TODO: combine with librarian
     let choices = mangaInfo.chapters.map((m, i) => {
@@ -133,13 +135,13 @@ async function showManga(url) {
     // });
 
     const selectedChapters = await tableSelect({
-        message: 'Select chapters to download',
+        message: '请选择需要下载的章节',
         choices: choices,
         // pageSize: 20
-        column: 8,
+        column: 6,
         loop: false,
+        instructions: '(空格选择，回车确认, a: 全选, i: 反选, c: 多选至上一个已选择)',
     });
-    // console.log(selectedChapters);
 
     //TODO: librarian check is download before and hint download folder
     let manga = await librarian.findManga(url);
@@ -153,10 +155,6 @@ async function showManga(url) {
     let path = "test";
 
     await downloadChapters(path, selectedChapters);
-}
-
-async function initSetting() {
-
 }
 
 async function downloadChapters(path, chapters) {
@@ -202,8 +200,14 @@ async function downloadChapters(path, chapters) {
     taskManager.start();
 }
 
-async function setting() {
-
+async function goSetting() {
+    for(let key in setting) {
+        let value = await input({ message: `键:${key} ->`, default: setting[key] });
+        setting[key] = value;
+    }
+    console.log('设置已保存');
+    await fs.writeFile(SETTING_PATH, JSON.stringify(setting, null, 4));
+    await home();
 }
 
 main();

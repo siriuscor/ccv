@@ -64,14 +64,15 @@ class TaskManager extends EventEmitter {
 
     start() {
         if (this.tasks.length <=0) return;
-        let worker = new Array(this.concurrency).fill(0);
+        let con = this.concurrency;
+        if (this.tasks.length < con) con = this.tasks.length;
+        let worker = new Array(con).fill(0);
         let index = 0;
         worker.map(async (_, i) => {
             this.emit('worker_start', i);
             while(index < this.tasks.length) {
                 let task = this.tasks[index++];
                 try {
-                    // this.emit('progress', index, this.tasks.length);
                     task.on('progress', (current, total) => {
                         this.emit('worker_progress', i, task, current, total);
                     });

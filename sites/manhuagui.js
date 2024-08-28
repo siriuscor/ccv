@@ -1,6 +1,7 @@
 if(typeof __mantaku == 'undefined') var __mantaku = {};
 __mantaku = Object.assign(__mantaku, {
-    name: 'manhuagui',
+    id: 'manhuagui',
+    name: '漫画柜(需翻墙)',
     home: 'https://www.manhuagui.com',
     canHandle: function canHandle(url) {
         return (url.match('tw.manhuagui.com') || url.match('www.mhgui.com') || url.match('www.manhuagui.com'));

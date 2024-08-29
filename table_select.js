@@ -28,7 +28,7 @@ const checkboxTheme = {
         cursor: figures.default.pointer,
     },
     style: {
-        disabledChoice: (text) => colors.default.dim(`- ${text}`),
+        disabledChoice: (text) => colors.default.dim(` ${text}`),
         renderSelectedChoices: (selectedChoices) => selectedChoices
             .map((choice) => { var _a, _b; return (_b = (_a = choice.short) !== null && _a !== void 0 ? _a : choice.name) !== null && _b !== void 0 ? _b : choice.value; })
             .join(', '),
@@ -163,14 +163,18 @@ exports.default = createPrompt((config, done) => {
                     return ` ${item.separator}`;
                 }
                 const line = String(item.name || item.value);
-                if (item.disabled) {
-                    const disabledLabel = typeof item.disabled === 'string' ? item.disabled : '(disabled)';
-                    return theme.style.disabledChoice(`${line} ${disabledLabel}`);
-                }
+                // if (item.disabled) {
+                    // const disabledLabel = typeof item.disabled === 'string' ? item.disabled : '(disabled)';
+                    // return theme.style.disabledChoice(`${line} ${disabledLabel}`);
+                // }
                 const checkbox = item.checked ? theme.icon.checked : theme.icon.unchecked;
                 const color = isActive ? theme.style.highlight : (x) => x;
                 const cursor = isActive ? theme.icon.cursor : ' ';
-                mline += color(`${cursor}${checkbox} ${line}`) + ' ';
+                if (item.disabled) {
+                    mline += color(`${theme.style.disabledChoice(line)}`) + ' ';
+                } else {
+                    mline += color(`${cursor}${checkbox} ${line}`) + ' ';
+                }
             }
             return mline;
         },

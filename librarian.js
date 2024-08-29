@@ -13,18 +13,28 @@ class Librarian {
             await fs.writeFile(DB_PATH, '{}');
         }
         this.db = require(DB_PATH);
-        await this.scanManga();
+    }
+
+    async getAllManga() {
+        return this.db;
     }
 
     async findManga(url) {
         for(let title in this.db) {
             let manga = this.db[title];
             if (manga.url === url) {
+                manga.downloaded = await this.scanDownloaded(title);
                 return manga;
             }
         }
-        return false; // TODO:implement
+        return false;
     }
+    async scanDownloaded(title) {
+        let folder = p.resolve(this.base, title);
+        let files = await fs.readdir(folder);
+        return files.map(f => p.parse(f).name);
+    }
+
     async scanManga() {
         let folder = this.base;
         let files = await fs.readdir(folder);
@@ -32,14 +42,14 @@ class Librarian {
         for (let file of files) {
             let stat = await fs.stat(file);
             if (stat.isDirectory()) {
-                let book = new Manga();
-                book.name = file;
-                let chapters = await fs.readdir(file);
-                for (let chapter of chapters) {
-                    let images = await fs.readdir(chapter);
-                    book.chapters.push(images);
-                }
-                books.push(book);
+                // let book = new Manga();
+                // book.name = file;
+                // let chapters = await fs.readdir(file);
+                // for (let chapter of chapters) {
+                    // let images = await fs.readdir(chapter);
+                    // book.chapters.push(images);
+                // }
+                // books.push(book);
             }
         }
         return books;
@@ -48,7 +58,6 @@ class Librarian {
         this.db[title] = manga;
         manga.path = p.resolve(this.base, title);
         manga.skip = [];
-        delete manga.chapters;
         await this.saveDB();
         return manga;
     }

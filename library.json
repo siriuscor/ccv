@@ -1,11 +1,99 @@
 {
-  "jojo_lion": {
-    "title": "JOJO的奇妙冒险JOJOLion",
+  "jojo_land": {
+    "title": "JOJO的奇妙冒险Prat9 The JOJO Lands",
     "author": "荒木飞吕彦",
-    "intro": "３月11日大地震的当天深夜，日本Ｓ市杜王町突然无预警地出现一道长达10公里的隆起──这个隆起日后被人称为「壁之眼」。有一天，平凡的高中女生广濑康穗在壁之眼与恋人岬的附近，发现了一名全身赤裸的奇特少年。",
-    "cover": "https://cf.mhgui.com/cpic/h/1420_46.jpg",
-    "status": "已完结",
-    "url": "https://www.manhuagui.com/comic/1420/",
-    "path": "/Users/liyi/Downloads/comics/jojo_lion"
+    "intro": "“这是讲述一个少年在亚热带群岛成为大富翁的故事——” JOJO的奇妙冒险第9部 The JOJO Lands拉开帷幕！",
+    "cover": "https://cf.mhgui.com/cpic/h/47478.jpg",
+    "status": "连载中",
+    "chapters": [
+      {
+        "url": "https://www.manhuagui.com/comic/47478/680268.html",
+        "title": "第01话"
+      },
+      {
+        "url": "https://www.manhuagui.com/comic/47478/684571.html",
+        "title": "第02话"
+      },
+      {
+        "url": "https://www.manhuagui.com/comic/47478/689384.html",
+        "title": "第03话"
+      },
+      {
+        "url": "https://www.manhuagui.com/comic/47478/693967.html",
+        "title": "第04话"
+      },
+      {
+        "url": "https://www.manhuagui.com/comic/47478/698697.html",
+        "title": "第05话"
+      },
+      {
+        "url": "https://www.manhuagui.com/comic/47478/704288.html",
+        "title": "第06话"
+      },
+      {
+        "url": "https://www.manhuagui.com/comic/47478/709688.html",
+        "title": "第07话"
+      },
+      {
+        "url": "https://www.manhuagui.com/comic/47478/715248.html",
+        "title": "第08话"
+      },
+      {
+        "url": "https://www.manhuagui.com/comic/47478/724803.html",
+        "title": "第09话"
+      },
+      {
+        "url": "https://www.manhuagui.com/comic/47478/730897.html",
+        "title": "第10话"
+      },
+      {
+        "url": "https://www.manhuagui.com/comic/47478/736007.html",
+        "title": "第11话"
+      },
+      {
+        "url": "https://www.manhuagui.com/comic/47478/740974.html",
+        "title": "第12话"
+      },
+      {
+        "url": "https://www.manhuagui.com/comic/47478/746201.html",
+        "title": "第13话"
+      },
+      {
+        "url": "https://www.manhuagui.com/comic/47478/751575.html",
+        "title": "第14话"
+      },
+      {
+        "url": "https://www.manhuagui.com/comic/47478/756491.html",
+        "title": "第15话"
+      },
+      {
+        "url": "https://www.manhuagui.com/comic/47478/762283.html",
+        "title": "第16话"
+      },
+      {
+        "url": "https://www.manhuagui.com/comic/47478/766859.html",
+        "title": "第17话"
+      },
+      {
+        "url": "https://www.manhuagui.com/comic/47478/771778.html",
+        "title": "第18话"
+      }
+    ],
+    "url": "https://www.manhuagui.com/comic/47478/",
+    "path": "/Users/admin/Downloads/comics/jojo_land",
+    "skip": [
+      {
+        "url": "https://www.manhuagui.com/comic/47478/689384.html",
+        "title": "第03话"
+      },
+      {
+        "url": "https://www.manhuagui.com/comic/47478/693967.html",
+        "title": "第04话"
+      },
+      {
+        "url": "https://www.manhuagui.com/comic/47478/698697.html",
+        "title": "第05话"
+      }
+    ]
   }
 }

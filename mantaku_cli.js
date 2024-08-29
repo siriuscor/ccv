@@ -1,4 +1,5 @@
 const {input, select, Separator, checkbox, rawlist, confirm} = require('@inquirer/prompts');
+const {ExitPromptError} = require('@inquirer/core');
 const {Mantaku} = require('./mantaku');
 const {Librarian, Manga} = require('./librarian');
 const cliProgress = require('cli-progress');
@@ -7,8 +8,7 @@ const fs = require('fs-extra');
 const {TaskManager} = require('./task');
 const tableSelect = require('./table_select').default;
 const utils = require('./utils');
-
-const SETTING_PATH = './setting.json';
+const settingHelper = require('./setting');
 
 function banner() {
     console.log(`                                                  
@@ -26,13 +26,19 @@ let setting = null;
 
 async function main() {
     banner();
-    if (!await fs.exists(SETTING_PATH)) {
-        await initSetting();
+    setting = await settingHelper.get();
+    if (!setting) {
+        setting = await initSetting();
+    } else if (!await settingHelper.check(setting)) {
+        setting = await initSetting('设置校验错误,请重新设置');
     }
-    setting = require(SETTING_PATH);
     
     librarian = new Librarian(setting.basePath);
     await librarian.init();
+
+    // let m = await librarian.findManga('https://www.manhuagui.com/comic/47478/');
+    // console.log(m);
+    // process.exit();
 
     mantaku = new Mantaku();
     let puppeteerOpts = setting.debugMode? {
@@ -64,6 +70,9 @@ async function home() {
         //     console.table(sites);
         //     await home();
         //     break;
+        case 'library':
+            await library();
+            break;
         case 'search':
             await search();
             break;
@@ -115,14 +124,16 @@ async function showManga(url) {
     }
 
     let manga = await librarian.findManga(url);
+    let downloaded = [];
     if (manga) {
+        downloaded = manga.downloaded;
     }
 
-    const skipMark = '⤾';
-    const existMark = '✓';
-    // TODO: combine with librarian
+    // const skipMark = '⤾';
+    // const existMark = '✓';
     let choices = mangaInfo.chapters.map((m, i) => {
-        return {name: m.title, value: m, description: m.url, /*checked: true*/};
+        let check = downloaded.includes(m.title);
+        return {name: (check?'✓ ':'') + m.title, value: m, description: m.url, disabled:check /*checked: true*/};
     });
 
     const selectedChapters = await tableSelect({
@@ -133,38 +144,29 @@ async function showManga(url) {
         loop: false,
         instructions: '(空格选择, 回车确认, a: 全选, i: 反选, c: 多选至上一个已选择)',
     });
-
-    //TODO: librarian check is download before and hint download folder
-    
     let title = mangaInfo.title;
     if (!manga) {
         title = await input({ message: `新漫画,请输入下载目录`, default: title });
         manga = await librarian.addManga(title, mangaInfo);
-        //TODO: librarian record skip chapters
     }
-    let path = manga.path;
-    await librarian.saveSkipChapters(manga, selectedChapters);
-    await downloadChapters(path, selectedChapters);
+    // let path = manga.path;
+    // await librarian.saveSkipChapters(manga, selectedChapters);
+    await downloadChapters(manga.path, selectedChapters);
 }
 
 async function downloadChapters(path, chapters) {
     let taskManager = new TaskManager({
-        concurrency: 2,
+        concurrency: setting.concurrency || 2,
         path: path,
         pages: [await mantaku.newBrowserPage(), await mantaku.newBrowserPage()]
     });
     taskManager.addChapter(chapters);
 
-    // create new container
     const multibar = new cliProgress.MultiBar({
         clearOnComplete: false,
         hideCursor: true,
         format: ' {bar} | {title} | {value}/{total} | ETA: {eta}s',
     }, cliProgress.Presets.legacy);
-
-    // for(let i = 0; i < taskManager.concurrency; i++) {
-    //     multibar.create(100, 0);
-    // }
 
     taskManager.on('worker_start', (worker_index) => {
         // console.log('debug worker start event', worker_index);
@@ -173,7 +175,8 @@ async function downloadChapters(path, chapters) {
     });
 
     taskManager.on('worker_progress', (worker_index, task, index, total) => {
-        let b = multibar.bars[worker_index];
+        // let b = multibar.bars[worker_index];
+        let b = multibar.bars.filter((b) => b.worker_index === worker_index)[0];
         b.total = total;
         b.update(index, {title: task.title});
     });
@@ -183,11 +186,30 @@ async function downloadChapters(path, chapters) {
         if (bar.length > 0) multibar.remove(bar[0]);
         if (multibar.bars.length <= 0) {
             multibar.stop();
-            console.log(`下载已完成,路径为${path},欢迎继续使用`);
+            console.log(`下载已完成,路径为${path},欢迎下次使用`);
             process.exit();
         }
     });
     taskManager.start();
+}
+
+async function library() {
+    let mangas = await librarian.getAllManga();
+    let choices = [];
+    for(let title in mangas) {
+        let m = mangas[title];
+        choices.push({name: `${m.title} - ${m.author}(${m.path})`, value: m.url});
+    };
+    if (choices.length <= 0) {
+        console.log('书库为空');
+        await home();
+        return;
+    }
+    const op2 = await select({
+        message: '选择漫画',
+        choices: choices,
+    });
+    await showManga(op2);
 }
 
 const settingPrompt = {
@@ -202,8 +224,7 @@ async function goSetting() {
         await askSetting(key);
     }
     console.log('设置已保存');
-    await fs.writeFile(SETTING_PATH, JSON.stringify(setting, null, 4));
-    // await home();
+    process.exit();
 }
 
 async function askSetting(key) {
@@ -214,13 +235,12 @@ async function askSetting(key) {
         value = await input({ message: `${settingPrompt[key]} :`, default: setting[key] });
     }
     setting[key] = value;
-    await fs.writeFile(SETTING_PATH, JSON.stringify(setting, null, 4));
+    await settingHelper.set(setting);
 }
 
-async function initSetting() {
-    console.log('首次进入,请初始化设置');
-    let init = {};
-    init.basePath = await input({ message: '下载书库路径,不存在将新建:', default: utils.getDefaultBasePath(),
+async function initSetting(msg) {
+    console.log(msg || '首次进入,请初始化设置');
+    let basePath = await input({ message: '下载书库路径,不存在将新建:', default: utils.getDefaultBasePath(),
         validate: async (value) => {
             if (!value) return '请填写下载路径';
             try {
@@ -234,17 +254,24 @@ async function initSetting() {
             return true;
         },
     });
-    init.basePath = p.resolve(init.basePath);
-    init.chromePath = await input({ message: '本工具需要使用Chrome,请输入Chrome路径:', default: utils.getDefaultChromePath(), 
+    basePath = p.resolve(basePath);
+    let chromePath = await input({ message: '本工具需要使用Chrome,请输入Chrome路径:', default: utils.getDefaultChromePath(), 
         validate: async (value) => {
             if (!value) return '请填写Chrome路径';
             if (!(await fs.exists(value))) return '路径无效';
             return true;
         },
     });
-    init = {...require('./setting-sample.json'), ...init};
-    await fs.writeFile(SETTING_PATH, JSON.stringify(init, null, 4));
+    let s = await settingHelper.set({basePath, chromePath});
     console.log('初始化设置完成,之后可以在设置中更改');
+    return s;
 }
 
-main();
+main().catch(e => {
+    if(e instanceof ExitPromptError) {
+        console.log('再见');
+        process.exit();
+    } else {
+        console.log('意外退出, 错误为', e);
+    }
+});

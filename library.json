@@ -1,22 +1,11 @@
 {
-    "JOJO_Land" : {
-        "url" : "https://www.mangabz.com/31141bz/",
-        "title" : "The JOJO Lands",
-        "author" : "JOJO",
-        "status" : "Ongoing",
-        "description" : "The JOJO Lands",
-        "cover" : "https://www.mangabz.com/31141bz/",
-        "chapters" : {
-            "chapter1" : {
-                "url" : "https://www.mangabz.com/31141bz/1.html",
-                "title" : "Chapter 1",
-                "date" : "2021-01-01"
-            },
-            "chapter2" : {
-                "url" : "https://www.mangabz.com/31141bz/2.html",
-                "title" : "Chapter 2",
-                "date" : "2021-01-02"
-            }
-        }
-    }
+  "jojo_lion": {
+    "title": "JOJO的奇妙冒险JOJOLion",
+    "author": "荒木飞吕彦",
+    "intro": "３月11日大地震的当天深夜，日本Ｓ市杜王町突然无预警地出现一道长达10公里的隆起──这个隆起日后被人称为「壁之眼」。有一天，平凡的高中女生广濑康穗在壁之眼与恋人岬的附近，发现了一名全身赤裸的奇特少年。",
+    "cover": "https://cf.mhgui.com/cpic/h/1420_46.jpg",
+    "status": "已完结",
+    "url": "https://www.manhuagui.com/comic/1420/",
+    "path": "/Users/liyi/Downloads/comics/jojo_lion"
+  }
 }

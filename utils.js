@@ -37,7 +37,43 @@ async function retry(proc, ...args) {
     // return await Promise.reject(last_error);
 }
 
+function getDefaultChromePath() {
+    if (process.platform === "win32") {
+        return 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe';
+    } else {
+        return '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+    }
+}
+
+function getDefaultBasePath() {
+    // if (process.platform === "win32") {
+    //     return 'D:\\comics';
+    // } else {
+    //     return '/Volumes/comics';
+    // }
+    return __dirname;
+}
+
+function twirlTimer(str) {
+    const icon = ['⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+    var x = 0;
+    return setInterval(function() {
+      process.stdout.write("\r" + icon[x++] + str);
+      x %= icon.length;
+    }, 200);}
+let loading = null;
+function startLoading() {
+    loading = twirlTimer(' 读取中...');
+}
+
+function stopLoading() {
+    clearInterval(loading);
+    process.stdout.write("\r");
+}
+
 module.exports = {
     fetchMangaDB, compress, rmdir,
-    sleep, retry,
+    sleep, retry, 
+    getDefaultChromePath, getDefaultBasePath,
+    startLoading, stopLoading
 }

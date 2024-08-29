@@ -1,15 +1,29 @@
 const fs = require('fs-extra');
 const child_process = require('child_process');
-// const json5 = require('json5');
-// require('json5/lib/register')
-// const setting = require('./setting.json5');
+const DB_PATH = './library.json';
+const p = require('path');
 
 class Librarian {
     constructor(base) {
         this.base = base;
     }
+
+    async init() {
+        if (!await fs.exists(DB_PATH)) { // init librarian json
+            await fs.writeFile(DB_PATH, '{}');
+        }
+        this.db = require(DB_PATH);
+        await this.scanManga();
+    }
+
     async findManga(url) {
-        return true; // TODO:implement
+        for(let title in this.db) {
+            let manga = this.db[title];
+            if (manga.url === url) {
+                return manga;
+            }
+        }
+        return false; // TODO:implement
     }
     async scanManga() {
         let folder = this.base;
@@ -30,10 +44,27 @@ class Librarian {
         }
         return books;
     }
+    async addManga(title, manga) {
+        this.db[title] = manga;
+        manga.path = p.resolve(this.base, title);
+        manga.skip = [];
+        delete manga.chapters;
+        await this.saveDB();
+        return manga;
+    }
+
+    async saveDB() {
+        await fs.writeFile(DB_PATH, JSON.stringify(this.db, null, 2));
+    }
+    async saveSkipChapters(manga, chapters) {
+        let set = new Set(chapters, ...manga.skip);
+        manga.skip = Array.from(set);
+        await this.saveDB();
+    }
 }
 
 class Manga {
-    constructor(path, mangaInfo) {
+    constructor(mangaInfo) {
     }
 }
 

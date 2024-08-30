@@ -107,9 +107,11 @@ async function search() {
 }
 
 async function showManga(url) {
+    utils.startLoading();
     let page = await mantaku.newBrowserPage();
-    await page.goto(url);
+    await utils.retry(page.goto.bind(page), url);
     let mangaInfo = await mantaku.browseManga(page);
+    utils.stopLoading();
     console.log(`标题: ${mangaInfo.title}`);
     console.log(`作者: ${mangaInfo.author}`);
     console.log(`介绍: ${mangaInfo.intro}`);
@@ -159,6 +161,8 @@ async function showManga(url) {
 
 async function downloadChapters(path, chapters) {
     let con = parseInt(setting.concurrency) || 2;
+    con = Math.min(con, chapters.length);
+    if (setting.debugMode) con = 1;
     let pages = [];
     for(let i = 0; i < con; i++) {
         pages.push(await mantaku.newBrowserPage());

@@ -24,7 +24,7 @@ __mantaku = Object.assign(__mantaku, {
     search: function search() {
         let list = document.querySelectorAll('.book-result ul li');
         return Array.from(list).map(li => {
-            console.log(li.querySelector('.book-detail dd:nth-child(2)'));
+            // console.log(li.querySelector('.book-detail dd:nth-child(2)'));
             return {
                 title: li.querySelector('.book-detail dt a').text,
                 url: li.querySelector('.book-cover a').href,

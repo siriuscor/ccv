@@ -1,0 +1,1 @@
+require('./src/mantaku_cli')

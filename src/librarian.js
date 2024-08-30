@@ -15,6 +15,10 @@ class Librarian {
         this.db = JSON.parse(await fs.readFile(DB_PATH));
     }
 
+    getMangePath(title) {
+        return p.resolve(this.base, title);
+    }
+
     async getAllManga() {
         return this.db;
     }
@@ -23,8 +27,9 @@ class Librarian {
         for(let title in this.db) {
             let manga = this.db[title];
             if (manga.url === url) {
-                manga.downloaded = await this.scanDownloaded(title);
-                return manga;
+                let copy = Object.assign({}, manga);
+                copy.downloaded = await this.scanDownloaded(title);
+                return copy;
             }
         }
         return false;
@@ -45,11 +50,24 @@ class Librarian {
     async addManga(title, manga) {
         let copy = Object.assign({}, manga);
         delete copy.chapters;
+        copy.key = title;
+        copy.lastOpen = Date.now();
         this.db[title] = copy;
         // manga.path = p.resolve(this.base, title);
         // manga.skip = [];
         await this.saveDB();
         return manga;
+    }
+
+    async updateManga(key) {
+        if (!this.db[key]) return;
+        this.db[key].lastOpen = Date.now();
+        await this.saveDB();
+    }
+
+    async deleteManga(title) {
+        delete this.db[title];
+        await this.saveDB();
     }
 
     async saveDB() {

@@ -1,4 +1,4 @@
-const {input, select, Separator, checkbox, rawlist, confirm} = require('@inquirer/prompts');
+const {input, select, Separator, checkbox, rawlist, confirm, expand} = require('@inquirer/prompts');
 const {ExitPromptError} = require('@inquirer/core');
 const {Mantaku} = require('./mantaku');
 const {Librarian, Manga} = require('./librarian');
@@ -154,7 +154,7 @@ async function showManga(url) {
     }
     // let path = manga.path;
     // await librarian.saveSkipChapters(manga, selectedChapters);
-    await downloadChapters(p.resolve(setting.basePath, title), selectedChapters);
+    await downloadChapters(librarian.getMangePath(title), selectedChapters);
 }
 
 async function downloadChapters(path, chapters) {
@@ -173,17 +173,17 @@ async function downloadChapters(path, chapters) {
     const multibar = new cliProgress.MultiBar({
         clearOnComplete: false,
         hideCursor: true,
-        format: ' {bar} | {title} | {value}/{total} | ETA: {eta}s',
+        barCompleteChar: '=',
+        barIncompleteChar: '.',
+        format: ' [{bar}] | {title} | {value}/{total} | ETA: {eta}s',
     }, cliProgress.Presets.legacy);
 
     taskManager.on('worker_start', (worker_index) => {
-        // console.log('debug worker start event', worker_index);
         let bar = multibar.create(100, 0);
         bar.worker_index = worker_index;
     });
 
     taskManager.on('worker_progress', (worker_index, task, index, total) => {
-        // let b = multibar.bars[worker_index];
         let b = multibar.bars.filter((b) => b.worker_index === worker_index)[0];
         b.total = total;
         b.update(index, {title: task.title});
@@ -203,21 +203,46 @@ async function downloadChapters(path, chapters) {
 
 async function library() {
     let mangas = await librarian.getAllManga();
-    let choices = [];
-    for(let title in mangas) {
-        let m = mangas[title];
-        choices.push({name: `${m.title} - ${m.author}(${p.resolve(setting.basePath, title)})`, value: m.url});
-    };
+    let list = Object.values(mangas).sort((a, b) => {
+        return a.lastOpen > b.lastOpen? -1 : 1;
+    });
+    let choices = list.map((m) => {
+        return {name: `${m.title} - ${m.author}(${librarian.getMangePath(m.key)})`, value: m};
+    });
     if (choices.length <= 0) {
         console.log('书库为空');
         await home();
         return;
     }
-    const op2 = await select({
+    const manga = await select({
         message: '选择漫画',
         choices: choices,
     });
-    await showManga(op2);
+
+    await librarian.updateManga(manga.key); // use for sort
+
+    const op3 = await select({
+        message: `对于 <${manga.title}> 选择一个操作`,
+        choices: [
+          {name: '查看漫画章节',value: 'show',},
+          {name: '删除漫画记录(不删除文件)',value: 'delete',},
+          {name: '返回上一级',value: 'back',},
+        ],
+      });
+
+    switch(op3) {
+        case 'show':
+            await showManga(manga.url);
+            break;
+        case 'delete':
+            await librarian.deleteManga(manga.key);
+            console.log('已删除');
+            await library();
+            break;
+        case 'back':
+            await library();
+            break;
+    }
 }
 
 const settingPrompt = {

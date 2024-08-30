@@ -80,6 +80,7 @@ async function home() {
     }
 }
 
+let currentSiteID = null;
 async function search() {
     let site = await select({
         message: '选择搜索的站点',
@@ -87,6 +88,7 @@ async function search() {
             return {name: m.name, value: m.id, description: m.home};
         }),
     });
+    currentSiteID = site;
     const keyword = await input({ message: '输入关键字:',});
     utils.startLoading();
     let page = await mantaku.newBrowserPage();
@@ -145,13 +147,13 @@ async function showManga(url) {
         message: '请选择需要下载的章节',
         choices: choices,
         // pageSize: 20
-        column: 6,
+        column: 5,
         loop: false,
         instructions: '(空格选择, 回车确认, a: 全选, i: 反选, c: 多选至上一个已选择)',
     });
     let title = mangaInfo.title;
     if (!manga) {
-        title = await input({ message: `新漫画,请输入下载目录`, default: title });
+        title = await input({ message: `新漫画,请输入下载目录`, default: `${title}(${currentSiteID})` });
         manga = await librarian.addManga(title, mangaInfo);
     }
     // let path = manga.path;

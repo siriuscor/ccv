@@ -1,13 +1,13 @@
 if(typeof __mantaku == 'undefined') var __mantaku = {};
 __mantaku = Object.assign(__mantaku, {
-    id: 'dm5',
-    name: 'dm5漫画人',
-    home: 'https://www.dm5.com/',
+    id: '1kkk',
+    name: '1kkk漫画',
+    home: 'https://www.1kkk.com/',
     canHandle: function canHandle(url) {
-        return (url.match('dm5.com') || url.match('www.dm5.com') || url.match('m.dm5.com'));
+        return (url.match('www.1kkk.com'));
     },
     searchUrl : function searchUrl(query) {
-        return `https://www.dm5.com/search.ashx?d=${Date.now()}&t=${query}&language=1`;
+        return `https://www.1kkk.com/search.ashx?d=${Date.now()}&t=${query}&language=1`;
     },
     search: function search() {
         let list = document.querySelectorAll('a');

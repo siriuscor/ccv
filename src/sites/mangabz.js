@@ -17,7 +17,7 @@ __mantaku = Object.assign(__mantaku, {
             cover: document.querySelector('img.detail-info-cover').src,
             status: document.querySelector('.detail-info-tip span:nth-child(2) span').innerText,
             chapters: Array.from(document.querySelectorAll('#chapterlistload a')).map(a => {
-                return { url: a.href, title: a.innerText.replace(/ *（.+）/g, '') };
+                return { url: a.href, title: a.innerText.replace(/ *（.+）/g, '').trim() };
             }).reverse()
         };
     },

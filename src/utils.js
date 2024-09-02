@@ -3,7 +3,8 @@ const JSZip = require('jszip');
 const path = require('path');
 const rimraf = require('rimraf');
 const rmdir = require('util').promisify(rimraf);
-const cp = require('child_process')
+const cp = require('child_process');
+const webp=require('webp-converter');
 
 async function compress(dir, zipName) {
     let list = await fs.readdir(dir);
@@ -72,18 +73,28 @@ function stopLoading() {
     process.stdout.write("\r");
 }
 
-function convertWebp(input_image,output_image,option,logging='-quiet') {
-        const query = `"${input_image}" ${option} "${output_image}" "${logging}"`;
-        return new Promise((resolve, reject) => {
-          cp.execFile('C:\\snapshot\\ccv\\webconverter\\dwebp.exe',query.split(/\s+/),{ shell: true }, (error, stdout, stderr) => {
-          if (error) {
-           console.warn(error);
-           return reject(error);
-          }
-          resolve(stdout? stdout : stderr);
-         });
-        });
+const {Jimp} = require('jimp');
+async function convertWebp(savePath, i) {
+    await webp.dwebp(`${savePath}/${i}.webp`, `${savePath}/${i}.jpg`, "-o");
+    // let image = await Jimp.read(`${savePath}/${i}.png`);
+    // image.quality(80);
+    // await image.write(`${savePath}/${i}.jpg`, {quality: 70});
+    await fs.unlink(`${savePath}/${i}.webp`);
+    // await fs.unlink(`${savePath}/${i}.png`);
 }
+
+// function convertWebp(input_image,output_image,option,logging='-quiet') {
+//         const query = `"${input_image}" ${option} "${output_image}" "${logging}"`;
+//         return new Promise((resolve, reject) => {
+//           cp.execFile('C:\\snapshot\\ccv\\webconverter\\dwebp.exe',query.split(/\s+/),{ shell: true }, (error, stdout, stderr) => {
+//           if (error) {
+//            console.warn(error);
+//            return reject(error);
+//           }
+//           resolve(stdout? stdout : stderr);
+//          });
+//         });
+// }
 
 module.exports = {
     fetchMangaDB, compress, rmdir,

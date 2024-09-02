@@ -29,6 +29,7 @@ class Librarian {
             if (manga.url === url) {
                 let copy = Object.assign({}, manga);
                 copy.downloaded = await this.scanDownloaded(title);
+                // console.log('downloaded', copy.downloaded);
                 return copy;
             }
         }
@@ -56,7 +57,7 @@ class Librarian {
         // manga.path = p.resolve(this.base, title);
         // manga.skip = [];
         await this.saveDB();
-        return manga;
+        return copy;
     }
 
     async updateManga(key) {

@@ -157,10 +157,11 @@ class ChapterDownloader extends EventEmitter{
                 await fs.outputFile(`${savePath}/${i}.${fromCache.mimeType}`, await imageCache[image].buffer());
 
                 if (fromCache.mimeType === 'webp') {
-                    const webp=require('webp-converter');
-                    await webp.dwebp(`${savePath}/${i}.webp`, `${savePath}/${i}.png`, "-o");
+                    // const webp=require('webp-converter');
+                    // await webp.dwebp(`${savePath}/${i}.webp`, `${savePath}/${i}.png`, "-o");
                     // await utils.convertWebp(`${savePath}/${i}.webp`, `${savePath}/${i}.png`, "-o");
-                    await fs.unlink(`${savePath}/${i}.webp`);
+                    // await fs.unlink(`${savePath}/${i}.webp`);
+                    await utils.convertWebp(savePath, i);
                 }
             }
 

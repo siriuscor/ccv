@@ -158,7 +158,7 @@ async function showManga(url) {
     }
     // let path = manga.path;
     // await librarian.saveSkipChapters(manga, selectedChapters);
-    await downloadChapters(librarian.getMangePath(title), selectedChapters);
+    await downloadChapters(librarian.getMangePath(manga.key), selectedChapters);
 }
 
 async function downloadChapters(path, chapters) {

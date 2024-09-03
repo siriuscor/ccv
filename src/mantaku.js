@@ -125,7 +125,7 @@ class ChapterDownloader extends EventEmitter{
 
     async download(page, url, title, path) {
         let imageCache = {};
-        page.on('response', async (response) => {
+        function responseListener(response) {
             const url = new URL(response.url());
             let type = mime.getExtension(response.headers()['content-type']);
             if (type === 'bin') type = 'png';
@@ -133,7 +133,8 @@ class ChapterDownloader extends EventEmitter{
                 response.mimeType = type;
                 imageCache[url.href] = response;
             }
-        });
+        }
+        page.on('response', responseListener);
 
         await page.goto(url);
         await SiteManager.injectSiteScript(page);
@@ -157,10 +158,6 @@ class ChapterDownloader extends EventEmitter{
                 await fs.outputFile(`${savePath}/${i}.${fromCache.mimeType}`, await imageCache[image].buffer());
 
                 if (fromCache.mimeType === 'webp') {
-                    // const webp=require('webp-converter');
-                    // await webp.dwebp(`${savePath}/${i}.webp`, `${savePath}/${i}.png`, "-o");
-                    // await utils.convertWebp(`${savePath}/${i}.webp`, `${savePath}/${i}.png`, "-o");
-                    // await fs.unlink(`${savePath}/${i}.webp`);
                     await utils.convertWebp(savePath, i);
                 }
                 if (fromCache.mimeType === 'png') { // compress it to jpg
@@ -178,6 +175,8 @@ class ChapterDownloader extends EventEmitter{
         let dir = p.resolve(path, title);
         await utils.compress(dir, p.resolve(path, `${title}.cbz`));
         await utils.rmdir(dir);
+
+        page.off('response', responseListener);
     }
 }
 

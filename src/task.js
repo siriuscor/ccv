@@ -7,7 +7,6 @@ class DownloadTask extends ChapterDownloader{
         this.path = path;
         this.title = title;
         this.status = 'pending';
-        // this.downloader = new ChapterDownloader();
     }
 
     async start(page) {

@@ -164,6 +164,7 @@ class ChapterDownloader extends EventEmitter{
                     await utils.convertWebp(savePath, i);
                 }
                 if (fromCache.mimeType === 'png') { // compress it to jpg
+                    await utils.convertPng(savePath, i);
                 }
             }
 

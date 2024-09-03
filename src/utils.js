@@ -4,7 +4,7 @@ const path = require('path');
 const rimraf = require('rimraf');
 const rmdir = require('util').promisify(rimraf);
 const cp = require('child_process');
-const webp=require('webp-converter');
+// const webp=require('webp-converter');
 
 async function compress(dir, zipName) {
     let list = await fs.readdir(dir);
@@ -83,10 +83,17 @@ async function convertWebp(savePath, i) {
     // await webp.dwebp(`${savePath}/${i}.webp`, `${savePath}/${i}.jpg`, "-o");
     // let image = await Jimp.read(`${savePath}/${i}.png`);
     // await image.write(`${savePath}/${i}.jpg`, {quality: 70});
-    // await fs.unlink(`${savePath}/${i}.webp`);
+    await fs.unlink(`${name}.webp`);
     // await fs.unlink(`${savePath}/${i}.png`);
 }
 
+async function convertPng(savePath, i) {
+    let name = `${savePath}/${i}`;
+    await sharp(name + '.png')
+      .jpeg({ quality: 70})
+      .toFile(name + '.jpg');
+    await fs.unlink(`${name}.png`);
+}
 // function convertWebp(input_image,output_image,option,logging='-quiet') {
 //         const query = `"${input_image}" ${option} "${output_image}" "${logging}"`;
 //         return new Promise((resolve, reject) => {
@@ -105,5 +112,5 @@ module.exports = {
     sleep, retry, 
     getDefaultChromePath, getDefaultBasePath,
     startLoading, stopLoading,
-    convertWebp
+    convertWebp, convertPng,
 }

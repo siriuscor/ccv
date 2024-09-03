@@ -70,12 +70,14 @@ async function home() {
         //     break;
         case 'library':
             await library();
+            // await home();
             break;
         case 'search':
             await search();
             break;
         case 'setting':
             await goSetting();
+            await home();
             break;
     }
 }
@@ -96,7 +98,7 @@ async function search() {
     utils.stopLoading();
     if (list.length <= 0) {
         console.log('未搜索到结果');
-        process.exit();
+        return;
     }
     let choices = list.map((m) => {
         return {name: m.title + (m.author?`(${m.author})`:''), value: m.url, description: m.url};
@@ -122,7 +124,7 @@ async function showManga(url) {
 
     if (mangaInfo.chapters.length <= 0) {
         console.log('未找到章节');
-        process.exit();
+        return;
     }
 
     let manga = await librarian.findManga(url);
@@ -139,7 +141,6 @@ async function showManga(url) {
 
     if (choices.filter((c) => !c.disabled).length <= 0) {
         console.log('所有章节已下载');
-        await home();
         return;
     }
 
@@ -151,6 +152,11 @@ async function showManga(url) {
         loop: false,
         instructions: '(空格选择, 回车确认, a: 全选, i: 反选, c: 多选至上一个已选择)',
     });
+
+    if (selectedChapters.length <= 0) {
+        console.log('未选择章节');
+        return;
+    }
     let title = mangaInfo.title;
     if (!manga) {
         title = await input({ message: `新漫画,请输入下载目录`, default: `${title}(${currentSiteID})` });
@@ -263,7 +269,7 @@ async function goSetting() {
         await askSetting(key);
     }
     console.log('设置已保存');
-    process.exit();
+    // process.exit();
 }
 
 async function askSetting(key) {
@@ -309,8 +315,8 @@ async function initSetting(msg) {
 main().catch(e => {
     if(e instanceof ExitPromptError) {
         console.log('再见');
-        process.exit();
     } else {
         console.log('意外退出, 错误为', e);
     }
+    process.exit();
 });

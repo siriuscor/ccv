@@ -163,6 +163,8 @@ class ChapterDownloader extends EventEmitter{
                     // await fs.unlink(`${savePath}/${i}.webp`);
                     await utils.convertWebp(savePath, i);
                 }
+                if (fromCache.mimeType === 'png') { // compress it to jpg
+                }
             }
 
             await page.evaluate(async () => {

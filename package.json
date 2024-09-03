@@ -10,12 +10,11 @@
     "debug": "^2.6.9",
     "fs-extra": "^8.1.0",
     "image-type": "^5.2.0",
-    "jimp": "^1.1.2",
     "jszip": "^3.2.2",
     "mime": "^2.6.0",
     "puppeteer-core": "^1.20.0",
     "rimraf": "^3.0.0",
-    "webp-converter": "^2.3.3",
+    "sharp": "^0.33.5",
     "yoctocolors-cjs": "^2.1.2"
   },
   "pkg": {

@@ -70,7 +70,7 @@ async function home() {
         //     break;
         case 'library':
             await library();
-            // await home();
+            // 
             break;
         case 'search':
             await search();
@@ -80,6 +80,7 @@ async function home() {
             await home();
             break;
     }
+    await home();
 }
 
 let currentSiteID = null;
@@ -182,35 +183,38 @@ async function downloadChapters(path, chapters) {
     });
     taskManager.addChapter(chapters);
 
-    const multibar = new cliProgress.MultiBar({
-        clearOnComplete: false,
-        hideCursor: true,
-        barCompleteChar: '=',
-        barIncompleteChar: '.',
-        format: ' [{bar}] | {title} | {value}/{total} | ETA: {eta}s',
-    }, cliProgress.Presets.legacy);
+    return new Promise((resolve, reject) => {
+        const multibar = new cliProgress.MultiBar({
+            clearOnComplete: false,
+            hideCursor: true,
+            barCompleteChar: '=',
+            barIncompleteChar: '.',
+            format: ' [{bar}] | {title} | {value}/{total} | ETA: {eta}s',
+        }, cliProgress.Presets.legacy);
 
-    taskManager.on('worker_start', (worker_index) => {
-        let bar = multibar.create(100, 0);
-        bar.worker_index = worker_index;
-    });
+        taskManager.on('worker_start', (worker_index) => {
+            let bar = multibar.create(100, 0);
+            bar.worker_index = worker_index;
+        });
 
-    taskManager.on('worker_progress', (worker_index, task, index, total) => {
-        let b = multibar.bars.filter((b) => b.worker_index === worker_index)[0];
-        b.total = total;
-        b.update(index, {title: task.title});
+        taskManager.on('worker_progress', (worker_index, task, index, total) => {
+            let b = multibar.bars.filter((b) => b.worker_index === worker_index)[0];
+            b.total = total;
+            b.update(index, {title: task.title});
+        });
+        
+        taskManager.on('worker_done', (worker_index) => {
+            let bar = multibar.bars.filter((b) => b.worker_index === worker_index);
+            if (bar.length > 0) multibar.remove(bar[0]);
+            if (multibar.bars.length <= 0) {
+                multibar.stop();
+                console.log(`下载已完成,路径为${path},欢迎下次使用`);
+                // process.exit();
+                resolve();
+            }
+        });
+        taskManager.start();
     });
-    
-    taskManager.on('worker_done', (worker_index) => {
-        let bar = multibar.bars.filter((b) => b.worker_index === worker_index);
-        if (bar.length > 0) multibar.remove(bar[0]);
-        if (multibar.bars.length <= 0) {
-            multibar.stop();
-            console.log(`下载已完成,路径为${path},欢迎下次使用`);
-            process.exit();
-        }
-    });
-    taskManager.start();
 }
 
 async function library() {

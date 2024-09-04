@@ -3,8 +3,8 @@ const JSZip = require('jszip');
 const path = require('path');
 const rimraf = require('rimraf');
 const rmdir = require('util').promisify(rimraf);
-const sharp = require('sharp');
-sharp.cache(false);
+// const sharp = require('sharp');
+// sharp.cache(false);
 
 async function compress(dir, zipName) {
     let list = await fs.readdir(dir);
@@ -64,20 +64,25 @@ function stopLoading() {
     process.stdout.write("\r");
 }
 
+const webp = require('webp-converter');
+const {Jimp} = require('jimp');
 async function convertWebp(savePath, i) {
     let name = `${savePath}/${i}`;
-    await sharp(name + '.webp')
-        .jpeg({ quality: 70})
-        .toFile(name + '.jpg');
+    await webp.dwebp(`${name}.webp`, `${name}.jpg`, "-o");
+    let image = await Jimp.read(`${name}.jpg`);
+    await image.write(`${name}.jpg`, {quality: 70});
+    // await sharp(name + '.webp')
+    //     .jpeg({ quality: 70})
+    //     .toFile(name + '.jpg');
     await fs.unlink(`${name}.webp`);
 }
 
 async function convertPng(savePath, i) {
-    let name = `${savePath}/${i}`;
-    await sharp(name + '.png')
-        .jpeg({ quality: 70})
-        .toFile(name + '.jpg');
-    await fs.unlink(`${name}.png`);
+    // let name = `${savePath}/${i}`;
+    // await sharp(name + '.png')
+    //     .jpeg({ quality: 70})
+    //     .toFile(name + '.jpg');
+    // await fs.unlink(`${name}.png`);
 }
 
 module.exports = {

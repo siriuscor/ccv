@@ -1,2 +1,3 @@
-#!./node
-require('./cli.js');
+#!/bin/bash
+cd "`dirname "$0"`"
+./node cli.js

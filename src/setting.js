@@ -1,6 +1,9 @@
 const fs = require('fs-extra');
 const SETTING_PATH = 'setting.json';
-const SAMPLE_SETTING_PATH = __dirname + '/setting-sample.json';
+const DEFAULT_SETTING = {
+    concurrency: 2,
+    debugMode: false
+};
 
 async function getSetting() {
     if (!await fs.exists(SETTING_PATH)) {
@@ -11,7 +14,7 @@ async function getSetting() {
 
 async function setSetting(setting) {
     let s = await getSetting();
-    if (!s) s = JSON.parse(await fs.readFile(SAMPLE_SETTING_PATH));
+    if (!s) s = DEFAULT_SETTING;
 
     let merge = {...s, ...setting};
     await fs.writeFile(SETTING_PATH, JSON.stringify(merge, null, 2));

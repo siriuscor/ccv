@@ -208,7 +208,7 @@ async function downloadChapters(path, chapters) {
             if (bar.length > 0) multibar.remove(bar[0]);
             if (multibar.bars.length <= 0) {
                 multibar.stop();
-                console.log(`下载已完成,路径为${path},欢迎下次使用`);
+                console.log(`下载已完成,路径为${path}`);
                 // process.exit();
                 resolve();
             }
@@ -227,7 +227,6 @@ async function library() {
     });
     if (choices.length <= 0) {
         console.log('书库为空');
-        await home();
         return;
     }
     const manga = await select({

@@ -1,5 +1,5 @@
 const fs = require('fs-extra');
-const child_process = require('child_process');
+// const child_process = require('child_process');
 const DB_PATH = './library.json';
 const p = require('path');
 
@@ -81,9 +81,4 @@ class Librarian {
     }
 }
 
-class Manga {
-    constructor(mangaInfo) {
-    }
-}
-
-module.exports = {Librarian, Manga};
+module.exports = {Librarian};

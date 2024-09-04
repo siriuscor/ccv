@@ -3,6 +3,8 @@ const JSZip = require('jszip');
 const path = require('path');
 const rimraf = require('rimraf');
 const rmdir = require('util').promisify(rimraf);
+const sharp = require('sharp');
+sharp.cache(false);
 
 async function compress(dir, zipName) {
     let list = await fs.readdir(dir);
@@ -61,9 +63,6 @@ function stopLoading() {
     clearInterval(loading);
     process.stdout.write("\r");
 }
-
-const sharp = require('sharp');
-sharp.cache(false);
 
 async function convertWebp(savePath, i) {
     let name = `${savePath}/${i}`;

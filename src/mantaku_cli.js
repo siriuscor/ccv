@@ -1,7 +1,7 @@
-const {input, select, Separator, checkbox, rawlist, confirm, expand} = require('@inquirer/prompts');
+const {input, select, confirm} = require('@inquirer/prompts');
 const {ExitPromptError} = require('@inquirer/core');
 const {Mantaku} = require('./mantaku');
-const {Librarian, Manga} = require('./librarian');
+const {Librarian} = require('./librarian');
 const cliProgress = require('cli-progress');
 const p = require('path');
 const fs = require('fs-extra');
@@ -9,7 +9,6 @@ const {TaskManager} = require('./task');
 const tableSelect = require('./table_select').default;
 const utils = require('./utils');
 const settingHelper = require('./setting');
-const { exec } = require('child_process');
 
 function banner() {
     console.log(`                                                  

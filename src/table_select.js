@@ -23,8 +23,8 @@ const ansi_escapes = __importDefault(require("ansi-escapes"));
 
 const checkboxTheme = {
     icon: {
-        checked: colors.default.green(figures.default.circleFilled),
-        unchecked: figures.default.circle,
+        checked: colors.default.green(figures.default.radioOn),
+        unchecked: figures.default.radioOff,
         cursor: figures.default.pointer,
     },
     style: {

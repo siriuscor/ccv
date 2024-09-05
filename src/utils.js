@@ -6,6 +6,49 @@ const rmdir = require('util').promisify(rimraf);
 // const sharp = require('sharp');
 // sharp.cache(false);
 
+async function pack(dir, to, type) {
+    
+}
+
+
+async function toEpub(dir, to) {
+    let firstPage = null;
+    // need sort
+    let images = await fs.readdir(dir);
+    images.sort((a, b) => {
+        let aNum = parseInt(path.parse(a).name);
+        let bNum = parseInt(path.parse(b).name);
+        return aNum - bNum;
+    });
+    let pages = images.map(file => {
+        if (!firstPage) firstPage = path.join(dir, file);
+        return {
+            title: '第' + path.parse(file).name + '页',
+            data: `<img src="${path.join(dir, file)}" />`
+        };
+    });
+
+    const option = {
+        title: 'Image Book',
+        author: 'Author',
+        cover: firstPage,
+        content: pages,
+        hideToC: true,
+        appendChapterTitles: false,
+        css: `
+        body {
+            display: block;
+            margin: 0;
+            padding: 0;
+        }
+        `
+    };
+
+    const {EPub} = await import("@lesjoursfr/html-to-epub");
+    let epub = new EPub(option, to);
+    await epub.render();
+}
+
 async function compress(dir, zipName) {
     let list = await fs.readdir(dir);
     var zip = new JSZip();
@@ -13,7 +56,6 @@ async function compress(dir, zipName) {
         let item = list[i];
         zip.file(item, fs.readFile(path.resolve(dir, item)), {binary: true});
     }
-
     let content = await zip.generateAsync({type:"nodebuffer"});
     await fs.outputFile(zipName, content);
 }
@@ -92,3 +134,5 @@ module.exports = {
     startLoading, stopLoading,
     convertWebp, convertPng,
 }
+
+toEpub('/Users/liyi/Downloads/comic/JOJO的奇妙冒险JOJOLion(manhuagui)/第102话', '/Users/liyi/Downloads/comic/JOJO的奇妙冒险JOJOLion(manhuagui)/第102话.epub').catch(console.error);

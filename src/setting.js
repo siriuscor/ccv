@@ -2,7 +2,8 @@ const fs = require('fs-extra');
 const SETTING_PATH = 'setting.json';
 const DEFAULT_SETTING = {
     concurrency: 2,
-    debugMode: false
+    debugMode: false,
+    ext: 'cbz',
 };
 
 async function getSetting() {

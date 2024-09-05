@@ -264,6 +264,7 @@ const settingPrompt = {
     basePath: '下载书库路径',
     chromePath: 'Chrome路径',
     debugMode: '调试模式',
+    ext: '打包格式',
 };
 
 async function goSetting() {
@@ -271,7 +272,6 @@ async function goSetting() {
         await askSetting(key);
     }
     console.log('设置已保存');
-    // process.exit();
 }
 
 async function askSetting(key) {

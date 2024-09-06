@@ -1,18 +1,20 @@
 const {ChapterDownloader} = require('./mantaku');
 const {EventEmitter} = require('events');
 class DownloadTask extends ChapterDownloader{
-    constructor(url, title, path) {
+    constructor(url, title, path, type, mangaInfo) {
         super();
         this.url = url;
         this.path = path;
         this.title = title;
+        this.type = type;
+        this.mangaInfo = mangaInfo;
         this.status = 'pending';
     }
 
     async start(page) {
         this.status = 'downloading';
         try {
-            await this.download(page, this.url, this.title, this.path);
+            await this.download(page, this.url, this.title, this.path, this.type, this.mangaInfo);
         }catch(e) {
             this.emit('error', e);
             this.stop();
@@ -46,9 +48,9 @@ class TaskManager extends EventEmitter {
         return this.tasks;
     }
 
-    addChapter(chapters) {
+    addChapter(chapters, type, mangeInfo) {
         for(let chapter of chapters) {
-            let task = new DownloadTask(chapter.url, chapter.title, this.path);
+            let task = new DownloadTask(chapter.url, chapter.title, this.path, type, mangeInfo);
             this.addTask(task);
         }
     }
@@ -78,7 +80,7 @@ class TaskManager extends EventEmitter {
                     this.emit('worker_progress', i, task, 0, 100);
                     await task.start(this.pages[i]);
                 }catch(e) {
-                    console.error(`Worker ${i} on ${task.title} Failed, `, e.toString());
+                    console.error(`Worker ${i} on ${task.title} Failed, `, e);
                 }
             }
             this.emit('worker_done', i);

@@ -9,6 +9,7 @@ const {TaskManager} = require('./task');
 const tableSelect = require('./table_select').default;
 const utils = require('./utils');
 const settingHelper = require('./setting');
+// const VERSION = require('../package.json').version;
 
 function banner() {
     console.log(`                                                  
@@ -25,6 +26,7 @@ let librarian = null;
 let setting = null;
 
 async function main() {
+    // const {EPub} = await import("@lesjoursfr/html-to-epub");
     banner();
     setting = await settingHelper.get();
     if (!setting) {
@@ -49,8 +51,9 @@ async function main() {
 }
 
 async function home() {
+    let VERSION = await utils.readVersion();
     const op1 = await select({
-        message: '欢迎使用Mantaku,请选择(随时用Ctrl+C退出)',
+        message: `欢迎使用Mantaku v${VERSION},请选择(随时用Ctrl+C退出)`,
         choices: [
           {name: '搜索', value: 'search',},
           {name: '书库', value: 'library',},
@@ -164,10 +167,10 @@ async function showManga(url) {
     }
     // let path = manga.path;
     // await librarian.saveSkipChapters(manga, selectedChapters);
-    await downloadChapters(librarian.getMangePath(manga.key), selectedChapters);
+    await downloadChapters(librarian.getMangePath(manga.key), selectedChapters, manga);
 }
 
-async function downloadChapters(path, chapters) {
+async function downloadChapters(path, chapters, manga) {
     let con = parseInt(setting.concurrency) || 2;
     con = Math.min(con, chapters.length);
     if (setting.debugMode) con = 1;
@@ -180,7 +183,7 @@ async function downloadChapters(path, chapters) {
         path: path,
         pages,
     });
-    taskManager.addChapter(chapters);
+    taskManager.addChapter(chapters, setting.ext, manga);
 
     return new Promise((resolve, reject) => {
         const multibar = new cliProgress.MultiBar({
@@ -278,6 +281,12 @@ async function askSetting(key) {
     let value;
     if (typeof setting[key] === 'boolean') {
         value = await confirm({ message: `${settingPrompt[key]} :`, default: setting[key] });
+    } else if (key === 'ext') {
+        value = await select({ message: `${settingPrompt[key]} :`, choices: [
+            {name: 'zip', value: 'zip'},
+            {name: 'cbz', value: 'cbz'},
+            {name: 'epub', value: 'epub'},
+        ], default: setting[key] });
     } else {
         value = await input({ message: `${settingPrompt[key]} :`, default: setting[key] });
     }

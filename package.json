@@ -1,6 +1,6 @@
 {
   "name": "comic",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "comic downloader",
   "main": "mantaku_cli.js",
   "dependencies": {
@@ -41,6 +41,6 @@
   "author": "Sirius",
   "license": "ISC",
   "devDependencies": {
-    "esbuild": "0.23.1"
+    "esbuild": "^0.23.1"
   }
 }

@@ -123,7 +123,7 @@ class ChapterDownloader extends EventEmitter{
         super();
     }
 
-    async download(page, url, title, path) {
+    async download(page, url, title, path, packType, mangaInfo) {
         let imageCache = {};
         function responseListener(response) {
             const url = new URL(response.url());
@@ -173,7 +173,8 @@ class ChapterDownloader extends EventEmitter{
         }
 
         let dir = p.resolve(path, title);
-        await utils.compress(dir, p.resolve(path, `${title}.cbz`));
+        // await utils.compress(dir, p.resolve(path, `${title}.cbz`));
+        await utils.pack(dir, p.resolve(path, title), packType, mangaInfo);
         await utils.rmdir(dir);
 
         page.off('response', responseListener);

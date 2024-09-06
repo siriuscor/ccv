@@ -6,14 +6,25 @@ const rmdir = require('util').promisify(rimraf);
 // const sharp = require('sharp');
 // sharp.cache(false);
 
-async function pack(dir, to, type) {
-    
+async function pack(dir, to, type, mangaInfo) {
+    switch(type) {
+        case 'epub':
+            await toEpub(dir, to + '.epub', mangaInfo);
+            break;
+        case 'cbz':
+            await compress(dir, to + '.cbz', mangaInfo);
+            break;
+        case 'zip':
+            await compress(dir, to + '.zip', mangaInfo);
+            break;
+        default:
+            throw new Error('unknown type ' + type);
+    }
 }
 
 
-async function toEpub(dir, to) {
+async function toEpub(dir, to, mangaInfo) {
     let firstPage = null;
-    // need sort
     let images = await fs.readdir(dir);
     images.sort((a, b) => {
         let aNum = parseInt(path.parse(a).name);
@@ -29,8 +40,8 @@ async function toEpub(dir, to) {
     });
 
     const option = {
-        title: 'Image Book',
-        author: 'Author',
+        title: path.parse(to).name,
+        // author: 'Author',
         cover: firstPage,
         content: pages,
         hideToC: true,
@@ -43,6 +54,10 @@ async function toEpub(dir, to) {
         }
         `
     };
+    if (mangaInfo) {
+        if (mangaInfo.title) option.title = mangaInfo.title + ' ' + option.title;
+        if (mangaInfo.author) option.author = mangaInfo.author;
+    }
 
     const {EPub} = await import("@lesjoursfr/html-to-epub");
     let epub = new EPub(option, to);
@@ -127,12 +142,26 @@ async function convertPng(savePath, i) {
     // await fs.unlink(`${name}.png`);
 }
 
+async function readVersion() {
+    if (!await fs.exists('package.json')) {
+        if (await fs.exists('version')) {
+            return await fs.readFile('version', 'utf-8');
+        } else {
+            return '1.0.0';
+        }
+    } else {
+        let pkg = JSON.parse(await fs.readFile('package.json'));
+        return pkg.version;
+    }
+}
+
 module.exports = {
-    compress, rmdir,
+    readVersion,
+    compress, rmdir, pack,
     sleep, retry, 
     getDefaultChromePath, getDefaultBasePath,
     startLoading, stopLoading,
     convertWebp, convertPng,
 }
 
-toEpub('/Users/liyi/Downloads/comic/JOJO的奇妙冒险JOJOLion(manhuagui)/第102话', '/Users/liyi/Downloads/comic/JOJO的奇妙冒险JOJOLion(manhuagui)/第102话.epub').catch(console.error);
+// toEpub('/Users/admin/comics/JOJO的奇妙冒险Prat9 The JOJO Lands(manhuagui)/第17话', '/Users/admin/comics/JOJO的奇妙冒险Prat9 The JOJO Lands(manhuagui)/第17话.epub').catch(console.error);

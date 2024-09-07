@@ -9,7 +9,7 @@ __mantaku = Object.assign(__mantaku, {
     searchUrl : function searchUrl(query) {
         return `https://www.1kkk.com/search.ashx?d=${Date.now()}&t=${query}&language=1`;
     },
-    search: function search() {
+    search: async function search() {
         let list = document.querySelectorAll('a');
         return Array.from(list).map(i => {
             return {
@@ -20,7 +20,7 @@ __mantaku = Object.assign(__mantaku, {
             };
         });
     },
-    mangaInfo: function mangaInfo() {
+    mangaInfo: async function mangaInfo() {
         return {
             title: document.querySelector('.banner_detail_form .title').childNodes[0].textContent.trim(),
             author: document.querySelector('.banner_detail_form .subtitle').innerText,
@@ -32,7 +32,7 @@ __mantaku = Object.assign(__mantaku, {
             })
         };
     },
-    totalPage: function totalPage() {
+    totalPage: async function totalPage() {
         let pages = document.querySelectorAll('#chapterpager a');
         return pages[pages.length - 1].innerText;
     },

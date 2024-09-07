@@ -39,8 +39,8 @@ class Mantaku {
 
     async browseManga(page) {
         await SiteManager.injectSiteScript(page);
-        return await page.evaluate(() => {
-            return __mantaku.mangaInfo();
+        return await page.evaluate(async () => {
+            return await __mantaku.mangaInfo();
         });
     }
 
@@ -111,8 +111,8 @@ class SiteManager {
         let url = site.searchUrl(keyword);
         await utils.retry(page.goto.bind(page), url);
         await this.injectSiteScript(page);
-        let result = await page.evaluate(() => {
-            return __mantaku.search();
+        let result = await page.evaluate(async () => {
+            return await __mantaku.search();
         });
         return result;
     }
@@ -138,36 +138,37 @@ class ChapterDownloader extends EventEmitter{
 
         await page.goto(url);
         await SiteManager.injectSiteScript(page);
-        let total = await page.evaluate(() => {
-            return __mantaku.totalPage();
+        let total = await page.evaluate(async () => {
+            return await __mantaku.totalPage();
         });
         // console.log('total page', total);
         let savePath = path + '/' + title;
         await fs.ensureDir(savePath);
 
         for(let i = 1; i <= total; i++) {
-            let image = await page.evaluate(async () => {
-                return await __mantaku.getImage();
-            });
+            let image = await page.evaluate(async (i) => {
+                return await __mantaku.getImage(i);
+            }, i);
             let fromCache = imageCache[image];
             if (!fromCache) {
                 console.error('image not found in cache', image);
                 throw new Error('image not found');
             } else {
                 //debug(`save image ${url} -> ${savePath}`);
-                await fs.outputFile(`${savePath}/${i}.${fromCache.mimeType}`, await imageCache[image].buffer());
+                let padNum = i.toString().padStart(3, '0');
+                await fs.outputFile(`${savePath}/${padNum}.${fromCache.mimeType}`, await imageCache[image].buffer());
 
                 if (fromCache.mimeType === 'webp') {
-                    await utils.convertWebp(savePath, i);
+                    await utils.convertWebp(savePath, padNum);
                 }
                 if (fromCache.mimeType === 'png') { // compress it to jpg
-                    await utils.convertPng(savePath, i);
+                    await utils.convertPng(savePath, padNum);
                 }
             }
 
-            await page.evaluate(async () => {
-                await __mantaku.nextPage();
-            });
+            await page.evaluate(async (i) => {
+                await __mantaku.nextPage(i);
+            }, i);
             
             this.emit('progress', i, total);
         }

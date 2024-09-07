@@ -41,10 +41,10 @@ async function toEpub(dir, to, mangaInfo) {
 
     const option = {
         title: path.parse(to).name,
-        // author: 'Author',
         cover: firstPage,
         content: pages,
         hideToC: true,
+        lang: 'zh-CN',
         appendChapterTitles: false,
         css: `
         body {
@@ -57,6 +57,8 @@ async function toEpub(dir, to, mangaInfo) {
     if (mangaInfo) {
         if (mangaInfo.title) option.title = mangaInfo.title + ' ' + option.title;
         if (mangaInfo.author) option.author = mangaInfo.author;
+        if (mangaInfo.intro) option.description = mangaInfo.intro;
+        
     }
 
     const {EPub} = await import("@lesjoursfr/html-to-epub");

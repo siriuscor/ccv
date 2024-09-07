@@ -9,7 +9,7 @@ __mantaku = Object.assign(__mantaku, {
     searchUrl : function searchUrl(query) {
         return `https://www.manhuagui.com/s/${query}.html`;
     },
-    mangaInfo: function mangaInfo() {
+    mangaInfo: async function mangaInfo() {
         return {
             title: document.querySelector('.book-title h1').innerText,
             author: document.querySelector('.detail-list li:nth-child(2) span:nth-child(2) a').innerText,
@@ -21,7 +21,7 @@ __mantaku = Object.assign(__mantaku, {
             })
         };
     },
-    search: function search() {
+    search: async function search() {
         let list = document.querySelectorAll('.book-result ul li');
         return Array.from(list).map(li => {
             // console.log(li.querySelector('.book-detail dd:nth-child(2)'));
@@ -33,7 +33,7 @@ __mantaku = Object.assign(__mantaku, {
             };
         });
     },
-    totalPage: function totalPage() {
+    totalPage: async function totalPage() {
         return document.querySelector('#pageSelect').options.length;
     },
     nextPage: async function nextPage() {

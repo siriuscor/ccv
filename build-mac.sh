@@ -5,11 +5,11 @@ DEST=build/mantaku
 mkdir -p $DEST
 
 npx esbuild cli.js --bundle --platform=node --outfile=$DEST/cli.js \
-    --minify \
     --external:webp-converter #--external:@lesjoursfr/html-to-epub
 
 #patch epub
 sed -i '_bak' 's#import_meta.url#"file://"+__dirname+"/node_modules/@lesjoursfr/html-to-epub/lib/index.js"#g' $DEST/cli.js
+rm $DEST/cli.js_bak
 
 #copy assets
 cp -r src/sites $DEST/

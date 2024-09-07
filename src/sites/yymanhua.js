@@ -9,7 +9,7 @@ __mantaku = Object.assign(__mantaku, {
     searchUrl : function searchUrl(query) {
         return `https://www.yymanhua.com/search?title=${query}`;
     },
-    search: function search() {
+    search: async function search() {
         let list = document.querySelectorAll('.mh-item');
         return Array.from(list).map(i => {
             return {
@@ -20,7 +20,7 @@ __mantaku = Object.assign(__mantaku, {
             };
         });
     },
-    mangaInfo: function mangaInfo() {
+    mangaInfo: async function mangaInfo() {
         return {
             title: document.querySelector('.detail-info .detail-info-title').innerText,
             author: document.querySelector('.detail-info .detail-info-tip span').innerText,
@@ -32,7 +32,7 @@ __mantaku = Object.assign(__mantaku, {
             })
         };
     },
-    totalPage: function totalPage() {
+    totalPage: async function totalPage() {
         let pages = document.querySelectorAll('.reader-bottom-page-list a');
         return pages.length;
     },

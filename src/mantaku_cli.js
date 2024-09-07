@@ -40,7 +40,8 @@ async function main() {
 
     mantaku = new Mantaku();
     let puppeteerOpts = setting.debugMode? {
-        headless: false, slowMo: 200, devtools:true,
+        headless: false, slowMo: 200, 
+        devtools:true,
         executablePath: setting.chromePath,
     }:{executablePath: setting.chromePath,};
     await mantaku.init({
@@ -211,7 +212,8 @@ async function downloadChapters(path, chapters, manga) {
             if (multibar.bars.length <= 0) {
                 multibar.stop();
                 console.log(`下载已完成,路径为${path}`);
-                // process.exit();
+
+                //TODO: close browser tab
                 resolve();
             }
         });
@@ -266,7 +268,7 @@ const settingPrompt = {
     concurrency: '并发下载数量',
     basePath: '下载书库路径',
     chromePath: 'Chrome路径',
-    debugMode: '调试模式',
+    debugMode: '调试模式(需重启生效)',
     ext: '打包格式',
 };
 

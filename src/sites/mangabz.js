@@ -9,7 +9,7 @@ __mantaku = Object.assign(__mantaku, {
     searchUrl : function searchUrl(query) {
         return `https://www.mangabz.com/search?title=${query}`;
     },
-    mangaInfo: function mangaInfo() {
+    mangaInfo: async function mangaInfo() {
         return {
             title: document.querySelector('.detail-info-title').innerText,
             author: document.querySelector('.detail-info-tip span a').innerText,
@@ -31,7 +31,7 @@ __mantaku = Object.assign(__mantaku, {
             }
         });
     },
-    totalPage: function totalPage() {
+    totalPage: async function totalPage() {
         return MANGABZ_IMAGE_COUNT || parseInt(document.querySelector('.bottom-page2').innerText.split('-')[1]);
     },
     nextPage: async function nextPage() {
